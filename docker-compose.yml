@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  edufair-app:
+    build: .
+    container_name: sloka_edufair_2026
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - HOST=0.0.0.0
+

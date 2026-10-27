@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Edu Fair 2026 - Sloka The School | Designed by Joshitha (Grade 6C)</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" href="assets/logo.jpg">
+</head>
+<body>
+
+  <!-- Ambient Grid Background -->
+  <div class="bg-grid-overlay"></div>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="brand-section" id="btn-brand-home">
+      <img src="assets/logo.jpg" alt="Sloka The School Logo" class="school-header-logo">
+      <div class="brand-text">
+        <h1>SLOKA THE SCHOOL</h1>
+        <p>EDU FAIR 2026 • MANIKONDA</p>
+      </div>
+    </div>
+
+    <div class="header-controls">
+      <!-- Student Designer Credit Badge -->
+      <div class="designer-badge" title="Project Designer">
+        <span>🌟 Designed by: <strong>Joshitha (6C)</strong></span>
+      </div>
+
+      <!-- Bluetooth Thermal Printer Indicator / Button -->
+      <button class="badge-button" id="btn-bluetooth-printer" title="Connect to POS58 Bluetooth Thermal Printer">
+        <span class="printer-status-dot" id="header-printer-dot"></span>
+        <span id="header-printer-text">🖨️ POS58 Printer</span>
+      </button>
+
+      <!-- Leaderboard Button -->
+      <button class="badge-button" id="btn-open-leaderboard">
+        🏆 Top Scores
+      </button>
+
+      <!-- Sound Mute Toggle -->
+      <button class="badge-button" id="btn-sound-toggle" title="Toggle Sound FX">
+        <span id="sound-icon">🔊</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="app-container">
+
+    <!-- ================= SCREEN 1: HOME SCREEN ================= -->
+    <section id="screen-home" class="screen active">
+      <div class="hero-banner">
+        <div class="hero-tag">🏫 SLOKA THE SCHOOL • EDU FAIR 2026</div>
+        <h2 class="hero-title">60-Second <span>Knowledge Challenge</span></h2>
+        <div class="hero-creator-pill">
+          <span>🌟 Project Created & Designed by <strong>Joshitha, Grade 6C</strong></span>
+        </div>
+      </div>
+
+      <!-- User Name Input (Large & Distance Readable) -->
+      <div class="user-input-card">
+        <div class="input-icon">🧑‍🎓</div>
+        <div class="input-group">
+          <label class="input-label" for="player-name-input">Participant Name / Student ID</label>
+          <input type="text" id="player-name-input" class="name-input" placeholder="Type Your Name..." maxlength="24">
+        </div>
+      </div>
+
+      <!-- Subject Filter Tabs -->
+      <div class="subject-filter-container">
+        <button class="subject-pill-btn active" data-subject="all">🌟 All Challenges (4)</button>
+        <button class="subject-pill-btn" data-subject="science">⚛️ Science Laboratory (2)</button>
+        <button class="subject-pill-btn" data-subject="english">📚 English Language (2)</button>
+      </div>
+
+      <!-- Game Mode Selection Cards (Touch-Optimized for Tablet) -->
+      <div class="mode-grid">
+        <!-- Mode 1: Science Synonym Matching -->
+        <div class="mode-card" id="card-start-synonym" data-subject="science">
+          <div class="mode-icon-badge">🧬</div>
+          <span style="font-size:0.75rem; font-weight:800; color:var(--cyan-glow); letter-spacing:1px; text-transform:uppercase; margin-bottom:4px;">SCIENCE LAB</span>
+          <h3 class="mode-card-title">Synonym Matching</h3>
+          <p class="mode-card-desc">
+            Analyze scientific diagrams and terms, then tap the matching scientific synonym.
+          </p>
+          <button class="start-btn">Start Science Synonym →</button>
+        </div>
+
+        <!-- Mode 2: Science Phenomenon Guessing -->
+        <div class="mode-card phenomenon" id="card-start-phenomenon" data-subject="science">
+          <div class="mode-icon-badge">🌌</div>
+          <span style="font-size:0.75rem; font-weight:800; color:var(--emerald-glow); letter-spacing:1px; text-transform:uppercase; margin-bottom:4px;">SCIENCE LAB</span>
+          <h3 class="mode-card-title">Phenomenon Guessing</h3>
+          <p class="mode-card-desc">
+            Watch live 60-FPS physics simulations (eclipses, refraction, DNA) and deduce the event.
+          </p>
+          <button class="start-btn">Start Science Phenomenon →</button>
+        </div>
+
+        <!-- Mode 3: English Vocabulary Synonym Matching -->
+        <div class="mode-card english-syn" id="card-start-eng-synonym" data-subject="english">
+          <div class="mode-icon-badge">📖</div>
+          <span style="font-size:0.75rem; font-weight:800; color:var(--violet-glow); letter-spacing:1px; text-transform:uppercase; margin-bottom:4px;">ENGLISH LANGUAGE</span>
+          <h3 class="mode-card-title">English Synonyms</h3>
+          <p class="mode-card-desc">
+            Master rich English vocabulary with illustrated concept scenes and select precise synonyms.
+          </p>
+          <button class="start-btn">Start English Synonym →</button>
+        </div>
+
+        <!-- Mode 4: English Idiom & Metaphor Guessing -->
+        <div class="mode-card english-idiom" id="card-start-eng-idiom" data-subject="english">
+          <div class="mode-icon-badge">🎭</div>
+          <span style="font-size:0.75rem; font-weight:800; color:var(--amber-gold); letter-spacing:1px; text-transform:uppercase; margin-bottom:4px;">ENGLISH LANGUAGE</span>
+          <h3 class="mode-card-title">Idiom & Metaphor Guessing</h3>
+          <p class="mode-card-desc">
+            Watch animated idioms (Break the Ice, Midnight Oil, Spill the Beans) and deduce their meaning.
+          </p>
+          <button class="start-btn">Start English Idioms →</button>
+        </div>
+      </div>
+
+      <!-- Info, Quick Rules & Top Scores Leaderboard Preview -->
+      <div class="home-bottom-grid">
+        <div class="info-card">
+          <h3>🎖️ Star Award System</h3>
+          <ul class="rules-list">
+            <li>
+              <span>★☆☆</span>
+              <div><strong>1 Star (Novice Researcher):</strong> 1 - 3 correct answers.</div>
+            </li>
+            <li>
+              <span>★★☆</span>
+              <div><strong>2 Stars (Lab Specialist):</strong> 4 - 6 correct answers.</div>
+            </li>
+            <li>
+              <span>★★★</span>
+              <div><strong>3 Stars (Science Fair Genius):</strong> 7+ correct answers in 60s!</div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="info-card">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <h3 style="margin:0;">🏆 Top Scores</h3>
+            <button id="btn-view-all-scores" style="background:none; border:none; color:var(--cyan-glow); font-size:0.8rem; font-weight:700; cursor:pointer;">View All →</button>
+          </div>
+          <div class="mini-leaderboard-list">
+            <!-- Populated dynamically via JS -->
+          </div>
+        </div>
+
+        <div class="info-card">
+          <h3>📷 Keepsake & Thermal Printer (POS58)</h3>
+          <ul class="rules-list">
+            <li>
+              <span>📸</span>
+              <div><strong>Webcam ID Snapshot:</strong> Take your scientist photo to stamp your badge.</div>
+            </li>
+            <li>
+              <span>🖨️</span>
+              <div><strong>POS58 Bluetooth Printing:</strong> Prints a physical 58mm keepsake certificate via ESC/POS!</div>
+            </li>
+            <li>
+              <span>📄</span>
+              <div><strong>Virtual Receipt:</strong> Instant on-screen keepsake with system print fallback.</div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ================= SCREEN 2: GAMEPLAY SCREEN ================= -->
+    <section id="screen-game" class="screen">
+      <!-- Game Header Bar -->
+      <div class="game-header-bar">
+        <div class="game-title-group">
+          <span class="game-mode-badge" id="hud-mode-badge">SYNONYM MATCH</span>
+          <span class="game-player-badge" id="hud-player-name">Dr. Curie</span>
+        </div>
+
+        <!-- Strict 60-Second Timer -->
+        <div class="timer-container">
+          <div class="timer-box" id="hud-timer-box">
+            <span class="timer-icon">⏱️</span>
+            <span class="timer-digits" id="hud-timer-text">01:00</span>
+          </div>
+        </div>
+
+        <!-- Live Score & Star Gauge -->
+        <div class="game-stats-group">
+          <div class="stat-pill">
+            <span class="stat-pill-label">Score</span>
+            <span class="stat-pill-value" id="hud-score-text">0</span>
+          </div>
+          <div class="live-stars-display" id="hud-stars-container">
+            <span class="live-star inactive" id="star-1">★</span>
+            <span class="live-star inactive" id="star-2">★</span>
+            <span class="live-star inactive" id="star-3">★</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Gameplay Split Layout -->
+      <div class="gameplay-split">
+        <!-- Left Side: Visual / Diagram or Dynamic Canvas Animation & Scientific Term -->
+        <div class="visual-card">
+          <div class="visual-top-info">
+            <span class="category-tag" id="visual-category-tag">PHYSICS</span>
+            <span class="question-counter" id="visual-question-counter">Question 1</span>
+          </div>
+
+          <!-- Display area: swaps between SVG diagram and Phenomenon Canvas -->
+          <div class="visual-display-area" id="visual-display-box">
+            <!-- For Synonym Matching: SVG illustration injected here -->
+            <div id="synonym-svg-wrapper"></div>
+            <!-- For Phenomenon Guessing: 60fps Canvas simulation -->
+            <canvas id="phenomenon-canvas" width="480" height="300" style="display:none;"></canvas>
+          </div>
+
+          <!-- Term Container -->
+          <div class="term-container">
+            <div class="term-eyebrow" id="term-eyebrow-text">SCIENTIFIC TERM</div>
+            <h2 class="scientific-term-title" id="term-title-text">Precipitation</h2>
+            <p class="term-tagline" id="term-tagline-text">Atmospheric moisture condensing and falling to Earth</p>
+          </div>
+        </div>
+
+        <!-- Right Side: Synonym / Phenomenon Choices Stack -->
+        <div class="choices-card">
+          <div class="choices-prompt">
+            <h3 id="choices-prompt-title">Select the Correct Scientific Synonym:</h3>
+            <p id="choices-prompt-sub">Click an option or press [A], [B], [C], [D]</p>
+          </div>
+
+          <div class="options-stack" id="options-container">
+            <!-- Option buttons dynamically generated -->
+          </div>
+
+          <!-- Explanation Feedback Box -->
+          <div class="feedback-box" id="feedback-box">
+            <p id="feedback-text"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ================= SCREEN 3: RESULTS & KEEPSAKE SCREEN ================= -->
+    <section id="screen-results" class="screen">
+      <div class="results-card">
+        <div class="results-header-tag">⏱️ TIME'S UP! LAB EXPERIMENT COMPLETE</div>
+        <h2 class="results-title">Mission Results</h2>
+        <p class="results-subtitle" id="results-cadet-name">Cadet Marie Curie</p>
+
+        <!-- 3 Stars Award Ceremony -->
+        <div class="stars-award-container">
+          <div class="award-star" id="award-star-1">★</div>
+          <div class="award-star" id="award-star-2">★</div>
+          <div class="award-star" id="award-star-3">★</div>
+        </div>
+
+        <div class="award-rank-title" id="award-rank-title">SCIENCE FAIR GENIUS</div>
+
+        <!-- Performance Stats -->
+        <div class="results-stats-row">
+          <div class="result-stat-box">
+            <div class="result-stat-label">Final Score</div>
+            <div class="result-stat-num" id="res-score-val" style="color:var(--emerald-glow);">90</div>
+          </div>
+          <div class="result-stat-box">
+            <div class="result-stat-label">Correct Matches</div>
+            <div class="result-stat-num" id="res-correct-val" style="color:var(--cyan-glow);">9</div>
+          </div>
+          <div class="result-stat-box">
+            <div class="result-stat-label">Accuracy</div>
+            <div class="result-stat-num" id="res-accuracy-val" style="color:var(--amber-gold);">100%</div>
+          </div>
+        </div>
+
+        <!-- Keepsake & Thermal Printer Section -->
+        <div class="keepsake-split">
+          <!-- Left: Webcam Snapshot -->
+          <div class="webcam-badge-card">
+            <h4>📷 Scientist ID Photo</h4>
+            <div class="camera-preview-wrapper">
+              <video id="camera-video" autoplay playsinline muted style="display:none;"></video>
+              <img id="photo-preview-img" alt="Captured Photo Preview">
+              <div class="camera-shutter-flash" id="camera-flash"></div>
+            </div>
+
+            <div class="camera-action-btns">
+              <button class="camera-btn primary" id="btn-take-selfie">📸 Snap Photo</button>
+              <button class="camera-btn secondary" id="btn-retake-photo">🔄 Retake</button>
+            </div>
+          </div>
+
+          <!-- Right: POS-58 Thermal Receipt Keepsake -->
+          <div class="receipt-wrapper">
+            <!-- Virtual 58mm Thermal Slip -->
+            <div class="thermal-receipt-paper" id="thermal-receipt">
+              <div class="receipt-center" style="margin-bottom:6px;">
+                <img src="assets/logo.jpg" alt="Sloka Logo" style="width:48px; height:48px; border-radius:50%; object-fit:cover; border:1px solid #111;">
+              </div>
+              <div class="receipt-center receipt-title">SLOKA THE SCHOOL</div>
+              <div class="receipt-center" style="font-weight:800; font-size:0.95rem; letter-spacing:1px;">EDU FAIR 2026</div>
+              <div class="receipt-center" style="font-size:0.7rem; color:#444;">A Temple of Moral Education • Manikonda</div>
+              <div class="receipt-line"></div>
+
+              <div class="receipt-center" style="font-size:0.72rem; font-weight:800; color:#111;">
+                PROJECT DESIGNED BY:<br>
+                JOSHITHA (GRADE 6C)
+              </div>
+              <div class="receipt-line"></div>
+              
+              <div class="receipt-row">
+                <span>STUDENT:</span>
+                <strong id="receipt-player-name">MARIE CURIE</strong>
+              </div>
+              <div class="receipt-row">
+                <span>CHALLENGE:</span>
+                <span id="receipt-mode-name">SYNONYM MATCH</span>
+              </div>
+              <div class="receipt-row">
+                <span>SCORE:</span>
+                <strong id="receipt-score">90 PTS</strong>
+              </div>
+              <div class="receipt-row">
+                <span>DATE:</span>
+                <span id="receipt-date">2026-10-28</span>
+              </div>
+              
+              <div class="receipt-line"></div>
+
+              <!-- Dithered Photo in Receipt -->
+              <div class="receipt-photo-box">
+                <img id="receipt-photo-img" src="" alt="Badge Photo">
+              </div>
+
+              <div class="receipt-center receipt-stars" id="receipt-stars">★ ★ ★</div>
+              <div class="receipt-center" id="receipt-rank">SCIENCE FAIR GENIUS</div>
+
+              <div class="receipt-line"></div>
+              <div class="receipt-center" style="font-size:0.68rem; line-height:1.4;">
+                SLOKA THE SCHOOL • EDU FAIR 2026<br>
+                Excellence in Moral & Scientific Education
+              </div>
+            </div>
+
+            <!-- Printer Actions -->
+            <div class="printer-actions">
+              <button class="print-bt-btn" id="btn-print-thermal">
+                🖨️ Send to POS58 Bluetooth Printer
+              </button>
+              <button class="print-fallback-btn" id="btn-browser-print">
+                📄 Print Keepsake Slip (Browser Print)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation Actions -->
+        <div class="results-bottom-actions">
+          <button class="action-btn secondary" id="btn-results-home">🏠 Home Screen</button>
+          <button class="action-btn primary" id="btn-results-play-again">🔄 Play Again</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= MODAL: LEADERBOARD ================= -->
+  <div class="modal-overlay" id="modal-leaderboard">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>🏆 Science Fair Hall of Fame</h3>
+        <button class="close-modal-btn" id="btn-close-leaderboard">&times;</button>
+      </div>
+
+      <div class="leaderboard-tabs" style="flex-wrap: wrap;">
+        <button class="tab-btn active" data-mode="all">All Top Scores</button>
+        <button class="tab-btn" data-mode="synonym">🔬 Science Synonyms</button>
+        <button class="tab-btn" data-mode="phenomenon">🌌 Science Phenomena</button>
+        <button class="tab-btn" data-mode="eng_synonym">📖 English Synonyms</button>
+        <button class="tab-btn" data-mode="eng_idiom">🎭 English Idioms</button>
+      </div>
+
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Researcher</th>
+            <th>Mode</th>
+            <th>Stars</th>
+            <th>Score</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboard-tbody">
+          <!-- Scores injected via JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/audio.js"></script>
+  <script src="js/confetti.js"></script>
+  <script src="js/questions.js"></script>
+  <script src="js/synonymIllustrations.js"></script>
+  <script src="js/phenomenonAnimations.js"></script>
+  <script src="js/camera.js"></script>
+  <script src="js/printer.js"></script>
+  <script src="js/leaderboard.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+name: EduFair 2026 CI & Docker Build
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  test-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Verify syntax of all JavaScript files
+        run: |
+          node -c server.js
+          node -c js/app.js
+          node -c js/questions.js
+          node -c js/synonymIllustrations.js
+          node -c js/phenomenonAnimations.js
+          node -c js/camera.js
+          node -c js/printer.js
+          node -c js/leaderboard.js
+          node -c js/audio.js
+          node -c js/confetti.js
+          echo "All JavaScript files validated successfully!"
+
+      - name: Build Docker Image
+        run: |
+          docker build -t sloka-edufair-2026:latest .
+          echo "Docker image built successfully!"
+
