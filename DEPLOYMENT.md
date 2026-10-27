@@ -93,22 +93,28 @@ To access the app securely via your domain (e.g., `https://edufair.yourdomain.co
 
 ---
 
-## 📱 Android Tablet Vertical Kiosk Setup
+## 📱 Android Tablet Offline Kiosk Setup (100% Zero-Wi-Fi Operation)
 
-The user interface has been tailored for Android tablets mounted vertically in a kiosk stand:
+This application is built as an offline-first **Progressive Web App (PWA)** with a dedicated Service Worker (`sw.js`) and Web Manifest (`manifest.json`).
 
-1. **Orientation:** Mount the tablet vertically (Portrait orientation).
-   - In Android Settings ➔ Display ➔ Auto-rotate: Set to **Portrait Lock**.
-2. **Camera Positioning:**
-   - The front camera at the top of the vertical tablet will naturally be at eye level with students standing at the booth.
-3. **Touch Ergonomics:**
-   - The question visual/animation is placed at the **top half** of the screen.
-   - The 4 answer options `[A], [B], [C], [D]` are placed at the **bottom half** with large touch targets (60px–68px high) for children's fingers.
-4. **Full-Screen Kiosk Mode:**
-   - Open **Google Chrome** on the Android tablet and navigate to `https://edufair.yourdomain.com`.
-   - Tap Chrome's menu (three dots) ➔ **"Add to Home screen"** or **"Install app"**.
-   - Launching from the home screen icon opens the app in standalone full-screen window without browser address bars!
-   - *Alternative kiosk apps:* **Fully Kiosk Browser** or **SureLock Kiosk**.
+### How to Install for 100% Offline School Booth Use:
+1. **Initial Setup (Once with Internet/LAN):**
+   - Open **Google Chrome** on the Android tablet and visit `https://edufair.yourdomain.com` (or `http://<server-ip>:3000`).
+   - The Service Worker will automatically cache **100% of all scripts, questions, diagrams, 60fps animations, sound synthesizer, and styles**.
+   - Tap Chrome's menu (three dots) ➔ tap **"Add to Home screen"** or **"Install app"**.
+2. **Offline at the School Fair (No Wi-Fi Needed!):**
+   - You can now turn Wi-Fi **OFF** (or put in Airplane mode).
+   - Launch the app from the tablet's home screen icon.
+   - **Everything works 100% offline**:
+     * ⏱️ **60-Second Timers**: Run in local JavaScript.
+     * 🌌 **Physics & Idiom Simulations**: 60-FPS Canvas animations render smoothly on the tablet GPU.
+     * 🔊 **Sound Effects**: Synthesized locally using the Web Audio API without downloading MP3s.
+     * 📷 **Webcam ID Camera**: Front camera captures photos locally.
+     * 🖨️ **POS-58 Bluetooth Printing**: Communicates directly over local Bluetooth radio without internet.
+     * 🏆 **Leaderboard & High Scores**: Persisted locally in tablet storage.
+3. **Reconnecting & Syncing Data:**
+   - When the tablet connects to Wi-Fi/Internet later, the app automatically triggers a background sync to send the offline-collected scores to the server (`POST /api/sync-scores`).
+   - Teachers can also open the **Top Scores Hall of Fame** modal and tap **"📥 Export to CSV"** to instantly download the results to a spreadsheet file on the tablet or a USB drive without needing any internet!
 
 ---
 

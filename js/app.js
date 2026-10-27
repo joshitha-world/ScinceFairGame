@@ -192,6 +192,37 @@ class ScienceFairApp {
       });
     });
 
+    // Leaderboard Offline / Admin Tools
+    const btnExportCSV = document.getElementById('btn-export-csv');
+    if (btnExportCSV) {
+      btnExportCSV.addEventListener('click', () => {
+        window.leaderboardManager.exportScoresToCSV();
+      });
+    }
+
+    const btnSyncScores = document.getElementById('btn-sync-scores');
+    if (btnSyncScores) {
+      btnSyncScores.addEventListener('click', async () => {
+        btnSyncScores.textContent = '🔄 Syncing...';
+        const ok = await window.leaderboardManager.syncScoresWithServer();
+        btnSyncScores.textContent = ok ? '✓ Synced!' : '⚠️ Sync Failed';
+        setTimeout(() => { btnSyncScores.textContent = '🔄 Sync to Server'; }, 2000);
+      });
+    }
+
+    const btnClearScores = document.getElementById('btn-clear-scores');
+    if (btnClearScores) {
+      btnClearScores.addEventListener('click', () => {
+        if (window.leaderboardManager.clearScores()) {
+          this.renderLeaderboardTable('all');
+          this.updateLeaderboardUI();
+        }
+      });
+    }
+
+    // Network Online / Offline Detection
+    this.initNetworkStatus();
+
     // Results Screen Controls
     document.getElementById('btn-results-play-again').addEventListener('click', () => {
       this.startGame(this.currentMode);
@@ -616,17 +647,26 @@ class ScienceFairApp {
     const miniContainer = document.querySelector('.mini-leaderboard-list');
     if (miniContainer) {
       miniContainer.innerHTML = '';
-      miniScores.forEach((s, idx) => {
-        const medals = ['🥇', '🥈', '🥉'];
-        const row = document.createElement('div');
-        row.className = 'mini-score-row';
-        row.innerHTML = `
-          <span class="mini-score-rank">${medals[idx] || (idx + 1)}</span>
-          <span class="mini-score-name">${s.name}</span>
-          <span class="mini-score-pts">${s.score} pts</span>
+      if (miniScores.length === 0) {
+        miniContainer.innerHTML = `
+          <div class="empty-leaderboard-msg">
+            🌟 <strong>Be the first champion!</strong><br>
+            Complete any 60s challenge above to set a high score.
+          </div>
         `;
-        miniContainer.appendChild(row);
-      });
+      } else {
+        miniScores.forEach((s, idx) => {
+          const medals = ['🥇', '🥈', '🥉'];
+          const row = document.createElement('div');
+          row.className = 'mini-score-row';
+          row.innerHTML = `
+            <span class="mini-score-rank">${medals[idx] || (idx + 1)}</span>
+            <span class="mini-score-name">${s.name}</span>
+            <span class="mini-score-pts">${s.score} pts</span>
+          `;
+          miniContainer.appendChild(row);
+        });
+      }
     }
   }
 
@@ -636,11 +676,20 @@ class ScienceFairApp {
   }
 
   renderLeaderboardTable(mode = 'all') {
-    const scores = window.leaderboardManager.getScores(mode, 15);
+    const scores = window.leaderboardManager.getScores(mode, 25);
     this.leaderboardTbody.innerHTML = '';
 
     if (scores.length === 0) {
-      this.leaderboardTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:#94a3b8;">No research records yet. Be the first!</td></tr>`;
+      this.leaderboardTbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align:center; padding:36px 16px; color:#94a3b8; font-size:0.95rem;">
+            🌟 <strong>No scores recorded yet!</strong><br>
+            <span style="font-size:0.82rem; color:#64748b; margin-top:4px; display:inline-block;">
+              Start any 60-second challenge at Edu Fair 2026 to claim the #1 spot!
+            </span>
+          </td>
+        </tr>
+      `;
       return;
     }
 
@@ -667,6 +716,42 @@ class ScienceFairApp {
       this.leaderboardTbody.appendChild(tr);
     });
   }
+
+  // Monitor Online/Offline state for PWA Kiosk
+  initNetworkStatus() {
+    const dot = document.getElementById('network-status-dot');
+    const text = document.getElementById('network-status-text');
+
+    const updateStatus = () => {
+      const isOnline = navigator.onLine;
+      if (dot && text) {
+        if (isOnline) {
+          dot.className = 'net-dot';
+          text.textContent = 'Online';
+        } else {
+          dot.className = 'net-dot offline';
+          text.textContent = 'Offline Kiosk';
+        }
+      }
+    };
+
+    window.addEventListener('online', updateStatus);
+    window.addEventListener('offline', updateStatus);
+    updateStatus();
+  }
+}
+
+// Register PWA ServiceWorker for 100% Offline Kiosk Operation
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then((reg) => {
+        console.log('[PWA] ServiceWorker registered successfully for 100% offline operation:', reg.scope);
+      })
+      .catch((err) => {
+        console.warn('[PWA] ServiceWorker registration failed:', err);
+      });
+  });
 }
 
 // Initialize Application once DOM is ready

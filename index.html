@@ -6,6 +6,12 @@
   <title>Edu Fair 2026 - Sloka The School | Designed by Joshitha (Grade 6C)</title>
   <link rel="stylesheet" href="css/styles.css">
   <link rel="icon" href="assets/logo.jpg">
+  <!-- PWA Manifest & Mobile Web App Meta -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0a0f1d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="EduFair 2026">
 </head>
 <body>
 
@@ -23,6 +29,12 @@
     </div>
 
     <div class="header-controls">
+      <!-- Network / Offline PWA Status Indicator -->
+      <div class="network-status-badge" id="network-status-badge" title="App runs 100% offline via ServiceWorker cache">
+        <span class="net-dot" id="network-status-dot"></span>
+        <span id="network-status-text">Online</span>
+      </div>
+
       <!-- Student Designer Credit Badge -->
       <div class="designer-badge" title="Project Designer">
         <span>🌟 Designed by: <strong>Joshitha (6C)</strong></span>
@@ -376,7 +388,7 @@
   <div class="modal-overlay" id="modal-leaderboard">
     <div class="modal-box">
       <div class="modal-header">
-        <h3>🏆 Science Fair Hall of Fame</h3>
+        <h3>🏆 Edu Fair 2026 Hall of Fame</h3>
         <button class="close-modal-btn" id="btn-close-leaderboard">&times;</button>
       </div>
 
@@ -392,8 +404,8 @@
         <thead>
           <tr>
             <th>Rank</th>
-            <th>Researcher</th>
-            <th>Mode</th>
+            <th>Participant</th>
+            <th>Challenge</th>
             <th>Stars</th>
             <th>Score</th>
           </tr>
@@ -402,6 +414,19 @@
           <!-- Scores injected via JS -->
         </tbody>
       </table>
+
+      <!-- Leaderboard Admin & Offline Tools -->
+      <div class="leaderboard-footer-tools">
+        <button class="tool-btn" id="btn-export-csv" title="Download results to spreadsheet without internet">
+          📥 Export to CSV
+        </button>
+        <button class="tool-btn" id="btn-sync-scores" title="Sync with Ubuntu server if connected">
+          🔄 Sync to Server
+        </button>
+        <button class="tool-btn danger" id="btn-clear-scores" title="Reset local test records">
+          🗑️ Clear Records
+        </button>
+      </div>
     </div>
   </div>
 

@@ -12,6 +12,7 @@ const MIME_TYPES = {
   '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.webmanifest': 'application/manifest+json; charset=utf-8',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
@@ -23,15 +24,65 @@ const MIME_TYPES = {
   '.woff2': 'font/woff2'
 };
 
+const DATA_DIR = path.join(__dirname, 'data');
+const SCORES_FILE = path.join(DATA_DIR, 'scores.json');
+
+function ensureDataStorage() {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+  if (!fs.existsSync(SCORES_FILE)) {
+    fs.writeFileSync(SCORES_FILE, JSON.stringify([]), 'utf-8');
+  }
+}
+ensureDataStorage();
+
 const server = http.createServer((req, res) => {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
     res.end();
+    return;
+  }
+
+  // API Route: POST /api/sync-scores (Syncs scores from offline devices when online)
+  if (req.url === '/api/sync-scores' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body);
+        const newEntries = payload.entries || [];
+        ensureDataStorage();
+        const existing = JSON.parse(fs.readFileSync(SCORES_FILE, 'utf-8') || '[]');
+
+        const existingMap = new Map();
+        existing.forEach(item => { if (item.id) existingMap.set(item.id, item); });
+        newEntries.forEach(item => { if (item.id) existingMap.set(item.id, item); });
+
+        const consolidated = Array.from(existingMap.values()).sort((a, b) => b.score - a.score);
+        fs.writeFileSync(SCORES_FILE, JSON.stringify(consolidated, null, 2), 'utf-8');
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, count: consolidated.length }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // API Route: GET /api/scores
+  if (req.url === '/api/scores' && req.method === 'GET') {
+    ensureDataStorage();
+    const scores = JSON.parse(fs.readFileSync(SCORES_FILE, 'utf-8') || '[]');
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(scores));
     return;
   }
 
@@ -54,10 +105,18 @@ const server = http.createServer((req, res) => {
     const ext = path.extname(filePath).toLowerCase();
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
-    res.writeHead(200, {
-      'Content-Type': contentType,
-      'Cache-Control': 'no-cache, no-store, must-revalidate'
-    });
+    const headers = {
+      'Content-Type': contentType
+    };
+
+    if (parsedUrl === '/sw.js') {
+      headers['Service-Worker-Allowed'] = '/';
+      headers['Cache-Control'] = 'no-cache';
+    } else {
+      headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+    }
+
+    res.writeHead(200, headers);
 
     const stream = fs.createReadStream(filePath);
     stream.pipe(res);
