@@ -1,1 +1,28 @@
-[]
+[
+  {
+    "id": "sloka_1793152161530_r9gus",
+    "name": "Sloka Star",
+    "mode": "eco",
+    "level": "mixed",
+    "score": 130,
+    "correct": 7,
+    "stars": 2,
+    "accuracy": "78%",
+    "date": "2026-10-28",
+    "timestamp": 1793152161530,
+    "synced": false
+  },
+  {
+    "id": "sloka_1793152023000_gc5jd",
+    "name": "joshitha",
+    "mode": "fact",
+    "level": "mixed",
+    "score": 75,
+    "correct": 5,
+    "stars": 1,
+    "accuracy": "71%",
+    "date": "2026-10-28",
+    "timestamp": 1793152023000,
+    "synced": false
+  }
+]

@@ -166,16 +166,17 @@ class ThermalPrinterController {
   }
 
   // Generate ESC/POS commands
-  buildEscPosCommands({ playerName, modeTitle, score, stars, dateStr, imageElement }) {
+  buildEscPosCommands({ playerName, modeTitle, levelLabel, score, stars, rankTitle, dateStr, imageElement }) {
     const commands = [];
 
     const append = (bytes) => {
       commands.push(...bytes);
     };
 
-    const textEncoder = new TextEncoder();
+    // POS-58 default code page is plain ASCII; anything else prints as garbage
     const appendText = (text) => {
-      append(Array.from(textEncoder.encode(text)));
+      const ascii = text.replace(/[^\x20-\x7E\n]/g, '');
+      append(Array.from(ascii, ch => ch.charCodeAt(0)));
     };
 
     // ESC @ : Initialize
@@ -201,13 +202,15 @@ class ThermalPrinterController {
     // Left Align for details
     append([0x1B, 0x61, 0x00]);
     append([0x1B, 0x45, 0x01]); // Bold on
-    appendText(`STUDENT:  ${playerName.toUpperCase()}\n`);
-    appendText(`MISSION:  ${modeTitle}\n`);
+    appendText(`NAME:     ${playerName.toUpperCase()}\n`);
+    appendText(`GAME:     ${modeTitle}\n`);
+    appendText(`LEVEL:    ${levelLabel}\n`);
     appendText(`SCORE:    ${score} PTS\n`);
     append([0x1B, 0x45, 0x00]); // Bold off
 
-    const starIcons = '★ '.repeat(stars) + '☆ '.repeat(3 - stars);
+    const starIcons = '[*]'.repeat(stars) + '[ ]'.repeat(3 - stars);
     appendText(`AWARD:    ${starIcons}\n`);
+    appendText(`          ${rankTitle}\n`);
     appendText(`DATE:     ${dateStr || new Date().toLocaleString()}\n`);
     appendText('--------------------------------\n');
 

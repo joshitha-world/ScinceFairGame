@@ -9,7 +9,7 @@
 - **Port:** `3000` (configurable via `PORT` environment variable)
 - **Host Binding:** `0.0.0.0` (accessible from all LAN interfaces & reverse proxies)
 - **Reverse Proxy:** Nginx Proxy Manager (NPM) with SSL (Let's Encrypt)
-- **Kiosk Target:** Android Tablet mounted vertically (Portrait mode)
+- **Kiosk Target:** 10" Android tablet (portrait or landscape; layout adapts)
 - **Peripherals:** Integrated Webcam (top bezel) & POS-58 Bluetooth Thermal Printer
 
 ---
@@ -100,7 +100,7 @@ This application is built as an offline-first **Progressive Web App (PWA)** with
 ### How to Install for 100% Offline School Booth Use:
 1. **Initial Setup (Once with Internet/LAN):**
    - Open **Google Chrome** on the Android tablet and visit `https://edufair.yourdomain.com` (or `http://<server-ip>:3000`).
-   - The Service Worker will automatically cache **100% of all scripts, questions, diagrams, 60fps animations, sound synthesizer, and styles**.
+   - The Service Worker will automatically cache **100% of all scripts, questions, sound synthesizer, and styles** (bump `CACHE_NAME` in `sw.js` after every update so tablets refresh).
    - Tap Chrome's menu (three dots) ➔ tap **"Add to Home screen"** or **"Install app"**.
 2. **Offline at the School Fair (No Wi-Fi Needed!):**
    - You can now turn Wi-Fi **OFF** (or put in Airplane mode).

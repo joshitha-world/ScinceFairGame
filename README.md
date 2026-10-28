@@ -1,8 +1,8 @@
-# 🔬 Science Fair Educational Game
+# ⏱️ Edu Fair 2026 — The 60-Second Challenge
 
-An interactive, high-energy educational web application designed for science fair booths, STEM exhibits, and school kiosks.
+A quick, fun quiz kiosk for the Sloka The School Edu Fair 2026 booth. Five one-tap games, four difficulty levels, so everyone from Grade 1 students to parents and teachers can play. Built to fill a 10" Android tablet in portrait or landscape, fully offline.
 
-Built with pure modern web standards: **Web Bluetooth API** (ESC/POS thermal printing for POS-58), **WebRTC MediaDevices API** (live webcam badge capture), **Web Audio API** (synthesized sound effects), and **HTML5 Canvas 60-FPS Physics Simulations**.
+Built with pure modern web standards: **Web Bluetooth API** (ESC/POS thermal printing for POS-58), **WebRTC MediaDevices API** (live webcam badge capture), **Web Audio API** (synthesized sound effects), and **Service Worker** (100% offline kiosk).
 
 ---
 
@@ -26,115 +26,72 @@ You can also directly double-click [`index.html`](file:///c:/Users/lenovo/OneDri
 
 ---
 
-## 🎮 Game Modes (Science & English)
+## 🎮 The Games
 
-### ⚛️ Science Laboratory Challenges
+Every round is **60 seconds**. Each game uses one simple mechanic so a new player understands it in seconds.
 
-#### 1. 🧬 Science Synonym Matching
-- **Left Panel:** Displays high-resolution scientific vector diagrams and terms (e.g., *Precipitation*, *Velocity*, *Photosynthesis*, *Density*, *Thermal Energy*, *Osmosis*, *Combustion*, *Inertia*, *Biodiversity*, *Refraction*, *Gravity*).
-- **Right Panel:** Displays multiple-choice scientific synonyms and equivalent concepts `[A], [B], [C], [D]`.
-- **Feedback:** Immediate visual and audio feedback, +10 points per correct answer, with concise educational explanations.
+| Game | Subject | How you play |
+|---|---|---|
+| 🤔 **Fact or Fiction** | Science & Safety | Read a statement, tap ✅ Fact or ❌ Fiction, or swipe the card right/left |
+| ♻️ **Eco Sorter** | Environment | Tap the right bin for each item: 🟢 Wet, 🔵 Dry, 🔴 Hazardous (Hyderabad's bin colours) |
+| 🔍 **Odd One Out** | Think Smart | Four picture tiles: tap the one that doesn't belong |
+| ⚡ **Math Blitz** | Mental Maths | Solve and tap. Questions are generated, so they never run out |
+| 📝 **Word Wizard** | English | Fill the blank, fix the grammar, spot the correct spelling |
+| 🎲 **Mega Mix** | Everything | Each question is a surprise from the five games above |
 
-#### 2. 🌌 Science Phenomenon Guessing
-- **Left Panel:** Displays real-time **60-FPS Canvas Physics & Natural Event Simulations**:
-  - **Solar Eclipse**: Moon transiting the Sun with glowing corona flares and totality diamond ring.
-  - **Prism Refraction & Dispersion**: White incident beam splitting into rainbow spectral wavelengths.
-  - **Photosynthesis**: Chloroplast thylakoids absorbing photons and releasing O₂ bubbles.
-  - **Volcanic Eruption**: Magma chamber pressure, pyroclastic fountain, and glowing lava ejection.
-  - **DNA Double Helix**: Rotating 3D-projected complementary base pairs (A-T, G-C).
-  - **Supernova Nucleosynthesis**: Massive star gravitational collapse and expanding blast wave.
-  - **Brownian Motion**: Colloidal particle random-walk drift caused by molecular collisions.
-  - **Bernoulli Aerodynamic Lift**: Airfoil streamline pressure differential generating upward lift.
-  - **Hydrological Water Cycle**: Evaporation, cloud condensation, and precipitation rainfall.
-  - **Magnetic Dipole Field**: Bar magnet with magnetic flux loops and aligning iron filings.
-- **Right Panel:** Vocabulary choices `[A], [B], [C], [D]` to deduce the observed scientific phenomenon.
+After every answer a one-line explanation appears, so players learn even when they're wrong.
 
----
+## 🎚️ Levels
 
-### 📚 English Language Arts Challenges
+| Level | For | Points per correct answer |
+|---|---|---|
+| 🌱 Easy | Grades 1–4 | 10 (Eco Sorter uses just 2 bins) |
+| 🚀 Medium | Grades 5–8 | 20 |
+| 🧠 Hard | Grade 9+ & grown-ups | 30 |
+| 🎲 Mixed | Everyone | Starts Easy, moves to Medium after 3 correct and Hard after 7 |
 
-#### 3. 📖 English Synonym Matching (Vocabulary & Lexicon)
-- **Left Panel:** Features evocative literary concept scenes, parts of speech, and advanced vocabulary terms (e.g., *Meticulous*, *Ephemeral*, *Resilient*, *Eloquent*, *Ubiquitous*, *Serendipity*, *Benevolent*, *Cacophony*, *Pragmatic*, *Tenacious*).
-- **Right Panel:** Multiple-choice options `[A], [B], [C], [D]` to match the most precise synonym and meaning.
-- **Feedback:** Instant feedback highlighting root etymology, Latin/Greek origins, and sentence context.
+**Streak bonus:** +5 on every answer while on a streak of 3 or more 🔥.
 
-#### 4. 🎭 English Idiom & Metaphor Guessing (Figurative Language)
-- **Left Panel:** Displays **60-FPS Animated Idioms and Metaphors**:
-  - **Break the Ice**: Mallet striking and shattering a frozen ice barrier to open warm conversation.
-  - **Burn the Midnight Oil**: Antique desk oil lamp glowing late into the night beside classic books and ticking wall clock.
-  - **Spill the Beans**: Secret jar tumbling over and scattering colorful bouncing beans.
-  - **On Cloud Nine**: Fluffy golden cloud #9 floating happily in the twilight sky with a joyful bobbing star mascot.
-  - **A Piece of Cake**: Celebratory 3-tier strawberry cake with sparkler candles and effortless dessert slice.
-  - **Time Flies**: Winged golden alarm clock soaring through clouds with feather air trails.
-  - **Raining Cats and Dogs**: Dark storm clouds with lightning flashes and torrential rain alongside playful cat/dog pawprints.
-  - **Bite the Bullet**: Steadfast knight's shield deflecting fiery obstacle bolts with sparkling fortitude.
-- **Right Panel:** Choices `[A], [B], [C], [D]` to deduce the true figurative or historical meaning.
+## 🎖️ Stars
 
----
+- ★ — everyone who plays (Rising Star)
+- ★★ — 6+ correct (Bright Spark)
+- ★★★ — 10+ correct (Super Genius)
 
-## ⏱️ Strict 60-Second Speed Timer
-- **Countdown Gauge:** Dynamic timer counting down strictly from `01:00` to `00:00`.
-- **Sensory Cues:** Color shifts from Cyan (>20s) to Amber warning (11-20s) to pulsing Red (<10s) with urgent auditory tick-tock cues.
-- **Strict Cutoff:** At `00:00`, the round terminates immediately and transitions to the **Mission Results** screen.
+## ✏️ Editing questions
 
----
+All content lives in [`js/challenges.js`](js/challenges.js), grouped by game and level (`FACT_BANK`, `ECO_BANK`, `ODD_BANK`, `WORD_BANK`). Add a line in the same format and it shows up in the game. Math questions come from `MATH_GENERATORS`. After changing any file, bump `CACHE_NAME` in [`sw.js`](sw.js) so tablets pick up the new version.
 
-## 🎖️ Star Award System
-Based on correct match count within the 60-second limit:
-- **★☆☆ 1 Star (Novice Researcher):** 1 – 3 correct answers
-- **★★☆ 2 Stars (Lab Specialist):** 4 – 6 correct answers
-- **★★★ 3 Stars (Science Fair Genius):** 7+ correct answers
+## 📷 Keepsake photo & 🖨️ POS-58 printing
 
-Includes sequential star popping animations, confetti celebrations, and brass synthesizer fanfares.
+- The results screen opens the webcam for a selfie (with a cartoon fallback if there's no camera).
+- **Print keepsake** sends an ESC/POS receipt with a dithered photo to a POS-58 (58 mm / 384-dot) Bluetooth printer via Web Bluetooth. Text is ASCII-only so it prints cleanly on the printer's default code page.
+- **"or use a normal printer"** prints the on-screen slip through the browser.
 
----
+## 🏆 Leaderboard
 
-## 📷 Webcam Scientist ID Snapshot
-- **Live Video Feed:** Captures live webcam stream (`getUserMedia`).
-- **Shutter Effect:** Realistic mechanical shutter audio and visual flash.
-- **Fallback Avatar:** Synthesizes a laboratory scientist avatar if camera permission is denied or absent.
-- **Photo Keepsake:** Seamlessly embeds the captured photo into the thermal receipt and research certificate.
+- Saved on the tablet (`localStorage`), filterable by game, shows level and stars.
+- **Export CSV** for teachers; **Sync to server** posts scores to `/api/sync-scores` (stored in `data/scores.json`).
 
----
+## 🧭 Kiosk tips
 
-## 🖨️ POS-58 Bluetooth Thermal Printer Integration
-Specifically designed for **POS-58 (58mm / 384 dots)** thermal receipt printers:
-- **Web Bluetooth Connectivity:** Scans and connects to POS58 BLE GATT services (`000018f0...`, `e7810a71...`, `49535343...`).
-- **ESC/POS Protocol:**
-  - Initial reset (`ESC @`)
-  - Centering & Bold formatting (`ESC a 1`, `ESC E 1`)
-  - Double width/height typography for certificates (`GS ! 0x11`)
-  - Line feeds and paper cut (`ESC d`, `GS V`)
-- **Floyd-Steinberg Dithering:** Converts the user's webcam photo into crisp 1-bit monochrome raster pixels (`GS v 0`) scaled for 384-dot thermal print heads.
-- **Virtual Thermal Receipt Preview:** Displays on-screen 58mm receipt paper with jagged top and bottom tear edges.
-- **Browser Print Fallback:** One-click `@media print` style to print the thermal keepsake on any connected printer or PDF.
-
----
-
-## 🏆 Top Scores / Leaderboard
-- Persists high scores locally in `localStorage`.
-- Displays top researcher names, stars earned, scores, accuracy, and dates.
-- Modal filterable by **All**, **Synonym Matching**, and **Phenomenon Guessing**.
-
----
+- Tap ⛶ in the header for full screen (or "Add to Home screen" to launch as a full-screen app).
+- The results screen returns to Home automatically after 2 minutes idle, ready for the next visitor. **New player** clears the name.
+- Keyboard: `A`–`D` / `1`–`4` to answer, `←`/`→` for Fact or Fiction, `Enter` for next.
 
 ## 🛠️ Architecture & Files
 
 ```text
-├── index.html                  # Semantic application markup & modals
-├── package.json                # Project configuration & npm start script
-├── server.js                   # Zero-dependency local Node.js static server
-├── css/
-│   └── styles.css              # Glassmorphic sci-fi UI, responsive layout, print styles
+├── index.html          # Screens: home, game, results; countdown & leaderboard overlays
+├── server.js           # Zero-dependency Node static server + score sync API
+├── sw.js               # Offline cache (bump CACHE_NAME on every release)
+├── css/styles.css      # Tablet-first layout (portrait & landscape), school colours, print slip
 └── js/
-    ├── app.js                  # Main controller, game loop, 60s timer, state machine
-    ├── audio.js                # Web Audio API synthesizer (no missing MP3 files)
-    ├── camera.js               # Webcam stream controller, snapshot & badge compositor
-    ├── confetti.js             # Canvas particle confetti burst celebration engine
-    ├── leaderboard.js          # High scores manager with localStorage persistence
-    ├── phenomenonAnimations.js # 60-FPS physics canvas simulations for 10 phenomena
-    ├── printer.js              # Web Bluetooth POS-58 driver & ESC/POS raster serializer
-    ├── questions.js            # Comprehensive scientific question banks
-    └── synonymIllustrations.js # Scalable vector SVG diagrams for scientific terms
+    ├── challenges.js   # Levels, games, all question content and the math generator
+    ├── app.js          # Round flow, timer, scoring, streaks, results, leaderboard UI
+    ├── audio.js        # Web Audio sound effects (no audio files)
+    ├── camera.js       # Webcam snapshot with cartoon fallback
+    ├── confetti.js     # Confetti bursts
+    ├── leaderboard.js  # localStorage scores, CSV export, server sync
+    └── printer.js      # Web Bluetooth POS-58 ESC/POS driver with dithering
 ```
-

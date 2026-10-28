@@ -1,7 +1,7 @@
 // Leaderboard Management with LocalStorage & Offline-First Sync Support
 // Sloka The School - Edu Fair 2026
 
-const LEADERBOARD_KEY = 'sloka_edufair_leaderboard_v2';
+const LEADERBOARD_KEY = 'sloka_edufair_leaderboard_v3';
 const DEFAULT_LEADERBOARD = []; // Clean empty start for real event participants
 
 class LeaderboardManager {
@@ -42,18 +42,19 @@ class LeaderboardManager {
     }
   }
 
-  addScore({ name, mode, score, stars, accuracy, photo }) {
-    const cleanName = (name && name.trim()) ? name.trim() : 'Sloka Student';
+  addScore({ name, mode, level, score, stars, accuracy, correct }) {
+    const cleanName = (name && name.trim()) ? name.trim() : 'Sloka Star';
     const entry = {
       id: 'sloka_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
       name: cleanName,
-      mode: mode, // 'synonym', 'phenomenon', 'eng_synonym', 'eng_idiom'
+      mode: mode, // a CHALLENGES id
+      level: level, // a LEVELS id
       score: score || 0,
+      correct: correct || 0,
       stars: stars || 1,
       accuracy: accuracy || '100%',
       date: new Date().toISOString().split('T')[0],
       timestamp: Date.now(),
-      photo: photo || null,
       synced: false
     };
 
@@ -72,6 +73,11 @@ class LeaderboardManager {
     }
 
     return entry;
+  }
+
+  // 1-based position of an entry within its own game's table
+  getRank(entry) {
+    return this.scores.filter(s => s.mode === entry.mode).findIndex(s => s.id === entry.id) + 1;
   }
 
   getScores(mode = 'all', limit = 10) {
@@ -117,24 +123,18 @@ class LeaderboardManager {
       return;
     }
 
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Rank,Student Name,Challenge Mode,Stars,Score (PTS),Accuracy,Date\n";
+    let csvContent = "Rank,Name,Game,Level,Stars,Score,Correct,Accuracy,Date\n";
 
     this.scores.forEach((entry, index) => {
-      const modeLabel = {
-        'synonym': 'Science Synonym Match',
-        'phenomenon': 'Science Phenomenon Guess',
-        'eng_synonym': 'English Synonym Match',
-        'eng_idiom': 'English Idiom Guess'
-      }[entry.mode] || entry.mode;
+      const modeLabel = (CHALLENGES[entry.mode] || {}).title || entry.mode;
+      const levelLabel = (LEVELS[entry.level] || {}).label || '';
 
       const safeName = `"${entry.name.replace(/"/g, '""')}"`;
-      csvContent += `${index + 1},${safeName},"${modeLabel}",${entry.stars},${entry.score},${entry.accuracy},${entry.date}\n`;
+      csvContent += `${index + 1},${safeName},"${modeLabel}",${levelLabel},${entry.stars},${entry.score},${entry.correct || 0},${entry.accuracy},${entry.date}\n`;
     });
 
-    const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    link.setAttribute("href", 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent));
     link.setAttribute("download", `Sloka_EduFair_2026_Scores_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();

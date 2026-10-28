@@ -1,7 +1,7 @@
 {
   "name": "science-fair-game",
   "version": "1.0.0",
-  "description": "Educational Science Fair Game - Synonym Matching & Phenomenon Guessing with Webcam & POS58 Thermal Printing",
+  "description": "Edu Fair 2026 60-Second Challenge - five quick quiz games with easy/medium/hard levels, webcam keepsake and POS58 thermal printing",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

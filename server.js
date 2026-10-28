@@ -52,7 +52,10 @@ const server = http.createServer((req, res) => {
   // API Route: POST /api/sync-scores (Syncs scores from offline devices when online)
   if (req.url === '/api/sync-scores' && req.method === 'POST') {
     let body = '';
-    req.on('data', chunk => { body += chunk; });
+    req.on('data', chunk => {
+      body += chunk;
+      if (body.length > 1024 * 1024) req.destroy(); // reject oversized payloads
+    });
     req.on('end', () => {
       try {
         const payload = JSON.parse(body);

@@ -1,160 +1,165 @@
-// Science Fair Educational Game - Master App Controller
+// Edu Fair 2026 - 60-Second Challenge: Master App Controller
 
-class ScienceFairApp {
+const ROUND_SECONDS = 60;
+const STREAK_BONUS = 5;              // extra points per answer while on a 3+ streak
+const STREAK_MILESTONES = [3, 5, 10, 15, 20];
+const ADVANCE_AFTER_CORRECT_MS = 1300;
+const ADVANCE_AFTER_WRONG_MS = 2800;
+const IDLE_RESET_MS = 120000;        // results screen returns home for the next visitor
+const STAR_THRESHOLDS = { two: 6, three: 10 };
+const RANK_TITLES = ['RISING STAR', 'RISING STAR', 'BRIGHT SPARK', 'SUPER GENIUS'];
+
+const escapeHtml = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+class EduFairApp {
   constructor() {
-    this.playerName = localStorage.getItem('science_fair_player_name') || '';
-    this.currentMode = 'synonym'; // 'synonym' or 'phenomenon'
-    this.questions = [];
-    this.currentQIndex = 0;
-    this.score = 0;
-    this.correctCount = 0;
-    this.totalAnswered = 0;
-    this.timerSeconds = 60;
-    this.timerInterval = null;
-    this.isAnsweringLocked = false;
-    this.stars = 0;
+    this.playerName = '';
+    this.level = localStorage.getItem('edufair_level') || 'mixed';
+    this.challengeId = null;
+    this.deck = new QuestionDeck();
+    this.round = null;
     this.activePhotoData = null;
-
-    this.phenomenonCanvas = document.getElementById('phenomenon-canvas');
-    this.phenomenonCtrl = new PhenomenonCanvasController(this.phenomenonCanvas);
+    this.idleTimer = null;
 
     this.initDOMElements();
+    this.buildHome();
+    this.buildLeaderboardTabs();
     this.initEventListeners();
+    this.initSwipe();
     this.initPrinterHooks();
+    this.initNetworkStatus();
     this.updateLeaderboardUI();
+    this.soundIcon.textContent = window.soundEngine.isMuted() ? '🔇' : '🔊';
   }
 
   initDOMElements() {
-    // Screens
-    this.screens = {
-      home: document.getElementById('screen-home'),
-      game: document.getElementById('screen-game'),
-      results: document.getElementById('screen-results')
-    };
+    const $ = (id) => document.getElementById(id);
+    this.$ = $;
 
-    // Home inputs
-    this.playerNameInput = document.getElementById('player-name-input');
-    if (this.playerName) {
-      this.playerNameInput.value = this.playerName;
-    }
+    this.screens = { home: $('screen-home'), game: $('screen-game'), results: $('screen-results') };
+    this.playerNameInput = $('player-name-input');
 
-    // HUD Elements
-    this.hudModeBadge = document.getElementById('hud-mode-badge');
-    this.hudPlayerName = document.getElementById('hud-player-name');
-    this.hudTimerBox = document.getElementById('hud-timer-box');
-    this.hudTimerText = document.getElementById('hud-timer-text');
-    this.hudScoreText = document.getElementById('hud-score-text');
-    this.liveStars = [
-      document.getElementById('star-1'),
-      document.getElementById('star-2'),
-      document.getElementById('star-3')
-    ];
+    // HUD
+    this.hudIcon = $('hud-icon');
+    this.hudChallenge = $('hud-challenge');
+    this.hudLevel = $('hud-level');
+    this.hudScoreText = $('hud-score-text');
+    this.hudStreak = $('hud-streak');
+    this.hudStreakNum = $('hud-streak-num');
+    this.scorePop = $('score-pop');
+    this.hudTimerBox = $('hud-timer-box');
+    this.hudTimerText = $('hud-timer-text');
+    this.timerFill = $('timer-fill');
 
-    // Question Display Elements
-    this.visualCategoryTag = document.getElementById('visual-category-tag');
-    this.visualQuestionCounter = document.getElementById('visual-question-counter');
-    this.synonymSvgWrapper = document.getElementById('synonym-svg-wrapper');
-    this.termEyebrow = document.getElementById('term-eyebrow-text');
-    this.termTitle = document.getElementById('term-title-text');
-    this.termTagline = document.getElementById('term-tagline-text');
-    this.optionsContainer = document.getElementById('options-container');
-    this.feedbackBox = document.getElementById('feedback-box');
-    this.feedbackText = document.getElementById('feedback-text');
-    this.choicesPromptTitle = document.getElementById('choices-prompt-title');
+    // Question
+    this.playArea = $('play-area');
+    this.qCard = $('q-card');
+    this.qTag = $('q-tag');
+    this.qIcon = $('q-icon');
+    this.qPrompt = $('q-prompt');
+    this.qSub = $('q-sub');
+    this.optionsContainer = $('options-container');
+    this.feedbackBox = $('feedback-box');
+    this.feedbackText = $('feedback-text');
 
-    // Results Elements
-    this.resultsCadetName = document.getElementById('results-cadet-name');
-    this.awardStars = [
-      document.getElementById('award-star-1'),
-      document.getElementById('award-star-2'),
-      document.getElementById('award-star-3')
-    ];
-    this.awardRankTitle = document.getElementById('award-rank-title');
-    this.resScoreVal = document.getElementById('res-score-val');
-    this.resCorrectVal = document.getElementById('res-correct-val');
-    this.resAccuracyVal = document.getElementById('res-accuracy-val');
+    // Countdown
+    this.countdown = $('countdown');
+
+    // Results
+    this.awardStars = [$('award-star-1'), $('award-star-2'), $('award-star-3')];
 
     // Webcam & Receipt
-    this.cameraVideo = document.getElementById('camera-video');
-    this.photoPreviewImg = document.getElementById('photo-preview-img');
-    this.cameraFlash = document.getElementById('camera-flash');
-    this.receiptPlayerName = document.getElementById('receipt-player-name');
-    this.receiptModeName = document.getElementById('receipt-mode-name');
-    this.receiptScore = document.getElementById('receipt-score');
-    this.receiptDate = document.getElementById('receipt-date');
-    this.receiptPhotoImg = document.getElementById('receipt-photo-img');
-    this.receiptStars = document.getElementById('receipt-stars');
-    this.receiptRank = document.getElementById('receipt-rank');
+    this.cameraVideo = $('camera-video');
+    this.photoPreviewImg = $('photo-preview-img');
+    this.cameraFlash = $('camera-flash');
+    this.receiptPhotoImg = $('receipt-photo-img');
 
-    // Header Controls
-    this.headerPrinterDot = document.getElementById('header-printer-dot');
-    this.headerPrinterText = document.getElementById('header-printer-text');
-    this.soundIcon = document.getElementById('sound-icon');
+    // Header
+    this.headerPrinterDot = $('header-printer-dot');
+    this.headerPrinterText = $('header-printer-text');
+    this.soundIcon = $('sound-icon');
 
-    // Modals
-    this.modalLeaderboard = document.getElementById('modal-leaderboard');
-    this.leaderboardTbody = document.getElementById('leaderboard-tbody');
+    // Modal
+    this.modalLeaderboard = $('modal-leaderboard');
+    this.leaderboardTbody = $('leaderboard-tbody');
+    this.toastEl = $('toast');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Home screen
+  // ---------------------------------------------------------------------------
+  buildHome() {
+    const levelRow = this.$('level-row');
+    levelRow.innerHTML = Object.values(LEVELS).map(l => `
+      <button class="level-btn level-${l.id}" data-level="${l.id}">
+        <span class="level-icon">${l.icon}</span>
+        <span class="level-name">${l.label}</span>
+        <span class="level-who">${l.who}</span>
+      </button>
+    `).join('');
+    this.setLevel(this.level);
+
+    const grid = this.$('challenge-grid');
+    grid.innerHTML = Object.values(CHALLENGES).map(c => `
+      <button class="game-tile" data-challenge="${c.id}" style="--c:${c.color}">
+        <span class="game-icon">${c.icon}</span>
+        <span class="game-text">
+          <span class="game-subject">${c.subject}</span>
+          <span class="game-title">${c.title}</span>
+        </span>
+        <span class="game-play">▶</span>
+      </button>
+    `).join('');
+  }
+
+  setLevel(level) {
+    this.level = LEVELS[level] ? level : 'mixed';
+    localStorage.setItem('edufair_level', this.level);
+    document.querySelectorAll('.level-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.level === this.level);
+    });
+  }
+
+  buildLeaderboardTabs() {
+    const tabs = [{ id: 'all', label: 'All games' }, ...Object.values(CHALLENGES).map(c => ({ id: c.id, label: `${c.icon} ${c.title}` }))];
+    this.$('leaderboard-tabs').innerHTML = tabs.map((t, i) =>
+      `<button class="tab-btn${i === 0 ? ' active' : ''}" data-mode="${t.id}">${t.label}</button>`
+    ).join('');
   }
 
   initEventListeners() {
-    // Brand click -> Return to Home
-    document.getElementById('btn-brand-home').addEventListener('click', () => {
-      if (this.timerInterval) {
-        if (!confirm('Leave current research round? Progress will be lost.')) return;
-      }
-      this.showScreen('home');
-    });
+    const $ = this.$;
 
-    // Player name change
+    $('btn-brand-home').addEventListener('click', () => this.confirmLeaveRound() && this.showScreen('home'));
+
     this.playerNameInput.addEventListener('input', (e) => {
       this.playerName = e.target.value.trim();
-      localStorage.setItem('science_fair_player_name', this.playerName);
+    });
+    this.playerNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') this.playerNameInput.blur();
     });
 
-    // Mode Selection Buttons
-    document.getElementById('card-start-synonym').addEventListener('click', () => {
-      this.startGame('synonym');
-    });
-    document.getElementById('card-start-phenomenon').addEventListener('click', () => {
-      this.startGame('phenomenon');
-    });
-    const cardEngSyn = document.getElementById('card-start-eng-synonym');
-    if (cardEngSyn) {
-      cardEngSyn.addEventListener('click', () => {
-        this.startGame('eng_synonym');
-      });
-    }
-    const cardEngIdiom = document.getElementById('card-start-eng-idiom');
-    if (cardEngIdiom) {
-      cardEngIdiom.addEventListener('click', () => {
-        this.startGame('eng_idiom');
-      });
-    }
-
-    // Subject Filter Tabs (All / Science / English)
-    document.querySelectorAll('.subject-pill-btn').forEach(pill => {
-      pill.addEventListener('click', () => {
-        document.querySelectorAll('.subject-pill-btn').forEach(p => p.classList.remove('active'));
-        pill.classList.add('active');
-        const subject = pill.getAttribute('data-subject');
-        document.querySelectorAll('.mode-card').forEach(card => {
-          if (subject === 'all' || card.getAttribute('data-subject') === subject) {
-            card.style.display = 'flex';
-          } else {
-            card.style.display = 'none';
-          }
-        });
-      });
+    $('level-row').addEventListener('click', (e) => {
+      const btn = e.target.closest('.level-btn');
+      if (!btn) return;
+      window.soundEngine.playClick();
+      this.setLevel(btn.dataset.level);
     });
 
-    // Sound Toggle
-    document.getElementById('btn-sound-toggle').addEventListener('click', () => {
+    $('challenge-grid').addEventListener('click', (e) => {
+      const tile = e.target.closest('.game-tile');
+      if (!tile) return;
+      window.soundEngine.playClick();
+      this.startChallenge(tile.dataset.challenge);
+    });
+
+    // Header
+    $('btn-sound-toggle').addEventListener('click', () => {
       const isMuted = window.soundEngine.toggleMute();
       this.soundIcon.textContent = isMuted ? '🔇' : '🔊';
     });
-
-    // Printer Connection in Header
-    document.getElementById('btn-bluetooth-printer').addEventListener('click', async () => {
+    $('btn-fullscreen').addEventListener('click', () => this.toggleFullscreen());
+    $('btn-bluetooth-printer').addEventListener('click', async () => {
       if (window.printerController.isConnected) {
         if (confirm(`Connected to ${window.printerController.deviceName}. Disconnect?`)) {
           await window.printerController.disconnect();
@@ -164,597 +169,604 @@ class ScienceFairApp {
       }
     });
 
-    // Leaderboard Modal Open/Close
-    document.getElementById('btn-open-leaderboard').addEventListener('click', () => {
-      this.openLeaderboardModal('all');
-    });
-    const btnViewAll = document.getElementById('btn-view-all-scores');
-    if (btnViewAll) {
-      btnViewAll.addEventListener('click', () => {
-        this.openLeaderboardModal('all');
-      });
-    }
-    document.getElementById('btn-close-leaderboard').addEventListener('click', () => {
-      this.modalLeaderboard.classList.remove('open');
-    });
+    // Leaderboard modal
+    $('btn-open-leaderboard').addEventListener('click', () => this.openLeaderboardModal('all'));
+    $('btn-view-all-scores').addEventListener('click', () => this.openLeaderboardModal('all'));
+    $('btn-close-leaderboard').addEventListener('click', () => this.modalLeaderboard.classList.remove('open'));
     this.modalLeaderboard.addEventListener('click', (e) => {
-      if (e.target === this.modalLeaderboard) {
-        this.modalLeaderboard.classList.remove('open');
+      if (e.target === this.modalLeaderboard) this.modalLeaderboard.classList.remove('open');
+    });
+    $('leaderboard-tabs').addEventListener('click', (e) => {
+      const btn = e.target.closest('.tab-btn');
+      if (!btn) return;
+      this.setLeaderboardTab(btn.dataset.mode);
+    });
+    $('btn-export-csv').addEventListener('click', () => window.leaderboardManager.exportScoresToCSV());
+    $('btn-sync-scores').addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      btn.textContent = '🔄 Syncing…';
+      const ok = await window.leaderboardManager.syncScoresWithServer();
+      btn.textContent = ok ? '✓ Synced!' : '⚠️ Sync failed';
+      setTimeout(() => { btn.textContent = '🔄 Sync to server'; }, 2000);
+    });
+    $('btn-clear-scores').addEventListener('click', () => {
+      if (window.leaderboardManager.clearScores()) {
+        this.setLeaderboardTab('all');
+        this.updateLeaderboardUI();
       }
     });
 
-    // Leaderboard Tabs
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        this.renderLeaderboardTable(btn.getAttribute('data-mode'));
-      });
+    // Game
+    $('btn-quit').addEventListener('click', () => this.confirmLeaveRound() && this.showScreen('home'));
+    $('btn-next').addEventListener('click', () => this.nextQuestion());
+    this.optionsContainer.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-value]');
+      if (btn) this.handleAnswer(btn.dataset.value);
     });
 
-    // Leaderboard Offline / Admin Tools
-    const btnExportCSV = document.getElementById('btn-export-csv');
-    if (btnExportCSV) {
-      btnExportCSV.addEventListener('click', () => {
-        window.leaderboardManager.exportScoresToCSV();
-      });
-    }
+    // Results
+    $('btn-results-play-again').addEventListener('click', () => this.startChallenge(this.challengeId));
+    $('btn-results-home').addEventListener('click', () => this.showScreen('home'));
+    $('btn-results-new-player').addEventListener('click', () => this.newPlayer());
+    $('btn-take-selfie').addEventListener('click', () => this.snapWebcamPhoto());
+    $('btn-retake-photo').addEventListener('click', () => this.startLiveWebcam());
+    $('btn-print-thermal').addEventListener('click', () => this.handleBluetoothPrint());
+    $('btn-browser-print').addEventListener('click', () => window.print());
 
-    const btnSyncScores = document.getElementById('btn-sync-scores');
-    if (btnSyncScores) {
-      btnSyncScores.addEventListener('click', async () => {
-        btnSyncScores.textContent = '🔄 Syncing...';
-        const ok = await window.leaderboardManager.syncScoresWithServer();
-        btnSyncScores.textContent = ok ? '✓ Synced!' : '⚠️ Sync Failed';
-        setTimeout(() => { btnSyncScores.textContent = '🔄 Sync to Server'; }, 2000);
-      });
-    }
-
-    const btnClearScores = document.getElementById('btn-clear-scores');
-    if (btnClearScores) {
-      btnClearScores.addEventListener('click', () => {
-        if (window.leaderboardManager.clearScores()) {
-          this.renderLeaderboardTable('all');
-          this.updateLeaderboardUI();
-        }
-      });
-    }
-
-    // Network Online / Offline Detection
-    this.initNetworkStatus();
-
-    // Results Screen Controls
-    document.getElementById('btn-results-play-again').addEventListener('click', () => {
-      this.startGame(this.currentMode);
-    });
-    document.getElementById('btn-results-home').addEventListener('click', () => {
-      this.showScreen('home');
-    });
-
-    // Camera Controls
-    document.getElementById('btn-take-selfie').addEventListener('click', () => {
-      this.snapWebcamPhoto();
-    });
-    document.getElementById('btn-retake-photo').addEventListener('click', async () => {
-      await this.startLiveWebcam();
-    });
-
-    // Printing Controls
-    document.getElementById('btn-print-thermal').addEventListener('click', () => {
-      this.handleBluetoothPrint();
-    });
-    document.getElementById('btn-browser-print').addEventListener('click', () => {
-      window.print();
-    });
-
-    // Keyboard Shortcuts [A, B, C, D] or [1, 2, 3, 4] for Rapid Selection
+    // Keyboard: A-D / 1-4 to answer, arrows for Fact or Fiction, Enter/Space for next
     window.addEventListener('keydown', (e) => {
-      if (this.screens.game.classList.contains('active') && !this.isAnsweringLocked) {
-        const key = e.key.toUpperCase();
-        const map = { 'A': 0, '1': 0, 'B': 1, '2': 1, 'C': 2, '3': 2, 'D': 3, '4': 3 };
-        if (map[key] !== undefined) {
-          const btn = document.getElementById(`choice-opt-${map[key]}`);
-          if (btn) btn.click();
-        }
+      if (!this.screens.game.classList.contains('active') || !this.round) return;
+      if (e.target === this.playerNameInput) return;
+      if (this.round.locked) {
+        if (e.key === 'Enter' || e.key === ' ') this.nextQuestion();
+        return;
       }
+      const q = this.round.q;
+      const key = e.key.toUpperCase();
+      if (q.kind === 'binary' && (key === 'ARROWLEFT' || key === 'ARROWRIGHT')) {
+        this.handleAnswer(key === 'ARROWRIGHT' ? 'fact' : 'fiction');
+        return;
+      }
+      const idx = { A: 0, '1': 0, B: 1, '2': 1, C: 2, '3': 2, D: 3, '4': 3 }[key];
+      if (idx !== undefined && q.options[idx]) this.handleAnswer(String(q.options[idx].value));
     });
+
+    // Any touch on the results screen keeps it alive
+    this.screens.results.addEventListener('pointerdown', () => this.armIdleReset());
+  }
+
+  // Drag the Fact or Fiction card left/right to answer
+  initSwipe() {
+    let startX = null;
+    let dx = 0;
+    const card = this.qCard;
+    const THRESHOLD = 110;
+
+    card.addEventListener('pointerdown', (e) => {
+      if (!this.round || this.round.locked || this.round.q.kind !== 'binary') return;
+      startX = e.clientX;
+      dx = 0;
+      card.setPointerCapture(e.pointerId);
+      card.classList.add('dragging');
+    });
+    card.addEventListener('pointermove', (e) => {
+      if (startX === null) return;
+      dx = e.clientX - startX;
+      card.style.transform = `translateX(${dx}px) rotate(${dx / 25}deg)`;
+      card.style.setProperty('--fact-o', Math.max(0, Math.min(1, dx / THRESHOLD)));
+      card.style.setProperty('--fiction-o', Math.max(0, Math.min(1, -dx / THRESHOLD)));
+    });
+    const end = () => {
+      if (startX === null) return;
+      startX = null;
+      card.classList.remove('dragging');
+      card.style.transform = '';
+      card.style.setProperty('--fact-o', 0);
+      card.style.setProperty('--fiction-o', 0);
+      if (Math.abs(dx) >= THRESHOLD) this.handleAnswer(dx > 0 ? 'fact' : 'fiction');
+    };
+    card.addEventListener('pointerup', end);
+    card.addEventListener('pointercancel', end);
   }
 
   initPrinterHooks() {
-    window.printerController.onStatusChange = ({ connected, statusText, deviceName }) => {
-      if (connected) {
-        this.headerPrinterDot.className = 'printer-status-dot connected';
-        this.headerPrinterText.textContent = `🖨️ ${deviceName}`;
-      } else {
-        this.headerPrinterDot.className = 'printer-status-dot';
-        this.headerPrinterText.textContent = '🖨️ POS58 Printer';
-      }
+    window.printerController.onStatusChange = ({ connected, deviceName }) => {
+      this.headerPrinterDot.className = connected ? 'printer-status-dot connected' : 'printer-status-dot';
+      this.headerPrinterText.textContent = connected ? `🖨️ ${deviceName}` : '🖨️';
     };
   }
 
-  showScreen(screenName) {
-    // Stop any ongoing phenomenon animation if leaving game screen
-    if (screenName !== 'game') {
-      this.phenomenonCtrl.stop();
-      if (this.timerInterval) {
-        clearInterval(this.timerInterval);
-        this.timerInterval = null;
-      }
+  confirmLeaveRound() {
+    if (this.round && this.round.timer) {
+      return confirm('Leave this round? Your score will not be saved.');
     }
-    // Stop camera if leaving results
+    return true;
+  }
+
+  showScreen(screenName) {
+    if (screenName !== 'game') this.stopRound();
     if (screenName !== 'results') {
       window.cameraController.stopCamera();
+      clearTimeout(this.idleTimer);
     }
+    if (screenName === 'home') this.updateLeaderboardUI();
 
     Object.keys(this.screens).forEach(key => {
       this.screens[key].classList.toggle('active', key === screenName);
     });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.body.dataset.screen = screenName;
   }
 
-  // Start 60-Second Timed Round
-  startGame(mode) {
-    this.currentMode = mode;
-    this.score = 0;
-    this.correctCount = 0;
-    this.totalAnswered = 0;
-    this.timerSeconds = 60;
-    this.stars = 0;
-    this.isAnsweringLocked = false;
+  newPlayer() {
+    this.playerName = '';
+    this.playerNameInput.value = '';
+    this.showScreen('home');
+  }
+
+  toggleFullscreen() {
+    const el = document.documentElement;
+    if (!document.fullscreenElement) {
+      (el.requestFullscreen || el.webkitRequestFullscreen || (() => {})).call(el);
+    } else {
+      (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    }
+  }
+
+  showToast(text) {
+    this.toastEl.textContent = text;
+    this.toastEl.classList.remove('show');
+    void this.toastEl.offsetWidth;
+    this.toastEl.classList.add('show');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Round flow
+  // ---------------------------------------------------------------------------
+  startChallenge(challengeId) {
+    this.challengeId = challengeId;
+    const c = CHALLENGES[challengeId];
+    const l = LEVELS[this.level];
+
+    this.$('countdown-icon').textContent = c.icon;
+    this.$('countdown-title').textContent = c.title;
+    this.$('countdown-level').textContent = `${l.icon} ${l.label} · ${l.who}`;
+    this.$('countdown-howto').textContent = c.howTo;
+    this.countdown.style.setProperty('--c', c.color);
+    this.countdown.classList.add('open');
+    this.modalLeaderboard.classList.remove('open');
+    document.activeElement && document.activeElement.blur();
+
+    const numEl = this.$('countdown-num');
+    const steps = ['3', '2', '1', 'GO!'];
+    let i = 0;
+    const tick = () => {
+      numEl.textContent = steps[i];
+      numEl.classList.remove('pop');
+      void numEl.offsetWidth;
+      numEl.classList.add('pop');
+      window.soundEngine.playTick(i === steps.length - 1);
+      i++;
+      if (i < steps.length) {
+        this.countdownTimer = setTimeout(tick, 900);
+      } else {
+        this.countdownTimer = setTimeout(() => {
+          this.countdown.classList.remove('open');
+          this.beginRound();
+        }, 600);
+      }
+    };
+    // Give players a moment to read how to play before counting down
+    this.countdownTimer = setTimeout(tick, 1600);
+  }
+
+  beginRound() {
+    this.stopRound();
+    const c = CHALLENGES[this.challengeId];
+    this.round = {
+      score: 0, correct: 0, answered: 0, streak: 0, bestStreak: 0,
+      timeLeft: ROUND_SECONDS, timer: null, advanceTimer: null, q: null, locked: false, lastChallenge: null
+    };
     this.activePhotoData = null;
 
-    const displayName = (this.playerName && this.playerName.trim()) ? this.playerName.trim() : 'Sloka Student';
-    this.hudPlayerName.textContent = displayName;
+    this.screens.game.style.setProperty('--c', c.color);
+    this.hudIcon.textContent = c.icon;
+    this.hudChallenge.textContent = c.title;
     this.hudScoreText.textContent = '0';
-    this.updateLiveStars(0);
-
-    // Prepare questions queue based on mode
-    let bank = SYNONYM_QUESTIONS;
-    if (mode === 'phenomenon') {
-      bank = PHENOMENON_QUESTIONS;
-    } else if (mode === 'eng_synonym') {
-      bank = ENGLISH_SYNONYM_QUESTIONS;
-    } else if (mode === 'eng_idiom') {
-      bank = ENGLISH_IDIOM_QUESTIONS;
-    }
-    this.questions = shuffleArray(bank);
-    this.currentQIndex = 0;
-
-    // Setup mode-specific HUD
-    if (mode === 'synonym') {
-      this.hudModeBadge.textContent = 'SCI SYNONYMS';
-      this.choicesPromptTitle.textContent = 'Select the Correct Scientific Synonym:';
-      this.synonymSvgWrapper.style.display = 'block';
-      this.phenomenonCanvas.style.display = 'none';
-      this.termEyebrow.textContent = 'SCIENTIFIC TERM';
-    } else if (mode === 'phenomenon') {
-      this.hudModeBadge.textContent = 'SCI PHENOMENA';
-      this.choicesPromptTitle.textContent = 'Identify this Scientific Event:';
-      this.synonymSvgWrapper.style.display = 'none';
-      this.phenomenonCanvas.style.display = 'block';
-      this.termEyebrow.textContent = 'OBSERVED EVENT';
-    } else if (mode === 'eng_synonym') {
-      this.hudModeBadge.textContent = 'ENG SYNONYMS';
-      this.choicesPromptTitle.textContent = 'Select the Closest English Synonym:';
-      this.synonymSvgWrapper.style.display = 'block';
-      this.phenomenonCanvas.style.display = 'none';
-      this.termEyebrow.textContent = 'ENGLISH VOCABULARY';
-    } else if (mode === 'eng_idiom') {
-      this.hudModeBadge.textContent = 'ENG IDIOMS';
-      this.choicesPromptTitle.textContent = 'Identify the Figurative Meaning:';
-      this.synonymSvgWrapper.style.display = 'none';
-      this.phenomenonCanvas.style.display = 'block';
-      this.termEyebrow.textContent = 'ILLUSTRATED EXPRESSION';
-    }
+    this.updateStreak();
 
     this.showScreen('game');
-    this.renderCurrentQuestion();
     this.startTimer();
+    this.nextQuestion();
+  }
+
+  stopRound() {
+    clearTimeout(this.countdownTimer);
+    this.countdown.classList.remove('open');
+    if (!this.round) return;
+    clearInterval(this.round.timer);
+    clearTimeout(this.round.advanceTimer);
+    this.round.timer = null;
   }
 
   startTimer() {
-    if (this.timerInterval) clearInterval(this.timerInterval);
+    const r = this.round;
     this.updateTimerDisplay();
-
-    this.timerInterval = setInterval(() => {
-      this.timerSeconds--;
+    r.timer = setInterval(() => {
+      r.timeLeft--;
       this.updateTimerDisplay();
-
-      // Sound and warning feedback
-      if (this.timerSeconds <= 10 && this.timerSeconds > 0) {
-        window.soundEngine.playTick(true);
-      } else if (this.timerSeconds > 10 && this.timerSeconds % 10 === 0) {
-        window.soundEngine.playTick(false);
-      }
-
-      if (this.timerSeconds <= 0) {
-        clearInterval(this.timerInterval);
-        this.timerInterval = null;
-        this.endGame();
-      }
+      if (r.timeLeft <= 10 && r.timeLeft > 0) window.soundEngine.playTick(true);
+      if (r.timeLeft <= 0) this.endRound();
     }, 1000);
   }
 
   updateTimerDisplay() {
-    const mins = Math.floor(this.timerSeconds / 60);
-    const secs = this.timerSeconds % 60;
-    this.hudTimerText.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-
-    // Visual styles based on remaining time
-    this.hudTimerBox.classList.remove('warning', 'critical');
-    if (this.timerSeconds <= 10) {
-      this.hudTimerBox.classList.add('critical');
-    } else if (this.timerSeconds <= 20) {
-      this.hudTimerBox.classList.add('warning');
-    }
+    const t = this.round.timeLeft;
+    this.hudTimerText.textContent = t;
+    this.timerFill.style.width = `${(t / ROUND_SECONDS) * 100}%`;
+    this.hudTimerBox.classList.toggle('warning', t <= 20 && t > 10);
+    this.hudTimerBox.classList.toggle('critical', t <= 10);
   }
 
-  renderCurrentQuestion() {
-    if (this.currentQIndex >= this.questions.length) {
-      // Loop or re-shuffle if user answers faster than bank size
-      let bank = SYNONYM_QUESTIONS;
-      if (this.currentMode === 'phenomenon') bank = PHENOMENON_QUESTIONS;
-      else if (this.currentMode === 'eng_synonym') bank = ENGLISH_SYNONYM_QUESTIONS;
-      else if (this.currentMode === 'eng_idiom') bank = ENGLISH_IDIOM_QUESTIONS;
-      this.questions = shuffleArray(bank);
-      this.currentQIndex = 0;
-    }
-
-    const q = this.questions[this.currentQIndex];
-    this.isAnsweringLocked = false;
-    this.feedbackBox.classList.remove('show', 'correct-text', 'incorrect-text');
-
-    this.visualCategoryTag.textContent = q.category.toUpperCase();
-    this.visualQuestionCounter.textContent = `Challenge #${this.totalAnswered + 1}`;
-
-    if (this.currentMode === 'synonym' || this.currentMode === 'eng_synonym') {
-      this.termTitle.textContent = q.term;
-      this.termTagline.textContent = q.tagline;
-      this.synonymSvgWrapper.innerHTML = getSynonymIllustration(q.illustration);
-    } else {
-      this.termTitle.textContent = q.title;
-      this.termTagline.textContent = q.hint;
-      this.phenomenonCtrl.start(q.animationType);
-    }
-
-    // Render 4 Options
-    this.optionsContainer.innerHTML = '';
-    const shuffledOpts = shuffleArray(q.options);
-    const keys = ['A', 'B', 'C', 'D'];
-
-    shuffledOpts.forEach((optText, idx) => {
-      const btn = document.createElement('button');
-      btn.className = 'choice-btn';
-      btn.id = `choice-opt-${idx}`;
-      btn.innerHTML = `
-        <span class="choice-key">${keys[idx]}</span>
-        <span class="choice-text">${optText}</span>
-      `;
-
-      btn.addEventListener('click', () => {
-        this.handleOptionSelect(optText, q, btn);
-      });
-
-      this.optionsContainer.appendChild(btn);
-    });
+  // In "Mixed", questions get harder as the player keeps scoring
+  currentQuestionLevel() {
+    if (this.level !== 'mixed') return this.level;
+    const c = this.round.correct;
+    if (c < 3) return 'easy';
+    if (c < 7) return 'medium';
+    return 'hard';
   }
 
-  handleOptionSelect(selectedText, q, clickedBtn) {
-    if (this.isAnsweringLocked) return;
-    this.isAnsweringLocked = true;
-    this.totalAnswered++;
+  nextQuestion() {
+    const r = this.round;
+    if (!r || !r.timer) return;
+    clearTimeout(r.advanceTimer);
 
-    const isCorrect = (selectedText === q.correct);
-    const allChoiceBtns = this.optionsContainer.querySelectorAll('.choice-btn');
+    let challenge = this.challengeId;
+    if (challenge === 'mix') {
+      const choices = PLAYABLE_CHALLENGES.filter(id => id !== r.lastChallenge);
+      challenge = pick(choices);
+    }
+    r.lastChallenge = challenge;
+
+    const level = this.currentQuestionLevel();
+    r.q = buildQuestion(challenge, level, this.deck, { binCount: this.level === 'easy' ? 2 : 3 });
+    r.locked = false;
+    this.renderQuestion(r.q);
+  }
+
+  renderQuestion(q) {
+    const c = CHALLENGES[q.challenge];
+    const l = LEVELS[q.level];
+
+    this.playArea.dataset.kind = q.kind;
+    this.playArea.dataset.variant = q.variant || '';
+    this.playArea.style.setProperty('--qc', c.color);
+    this.hudLevel.textContent = this.level === 'mixed' ? `🎲 Mixed · now ${l.label}` : `${l.icon} ${l.label}`;
+
+    this.qTag.textContent = this.challengeId === 'mix' ? `${c.icon} ${c.title}` : `Question ${this.round.answered + 1}`;
+    this.qIcon.textContent = q.icon || '';
+    this.qIcon.style.display = q.icon ? '' : 'none';
+    this.qPrompt.innerHTML = escapeHtml(q.prompt).replace('___', '<span class="blank" id="q-blank">?</span>');
+    this.qSub.textContent = q.sub || '';
+
+    this.qCard.classList.remove('shake', 'enter');
+    void this.qCard.offsetWidth;
+    this.qCard.classList.add('enter');
+
+    this.feedbackBox.className = 'feedback';
+    this.feedbackText.innerHTML = q.kind === 'binary'
+      ? '👈 Swipe or tap 👉'
+      : `<span class="feedback-hint">${escapeHtml(c.howTo.split('.')[0])}.</span>`;
+
+    this.optionsContainer.className = `answers answers-${q.kind} count-${q.options.length}`;
+    this.optionsContainer.innerHTML = q.options.map((o, i) => this.renderOption(q, o, i)).join('');
+  }
+
+  renderOption(q, o, i) {
+    const value = escapeHtml(o.value);
+    if (q.kind === 'binary') {
+      return `<button class="ans ans-${o.value}" data-value="${value}">
+        <span class="ans-icon">${o.icon}</span><span class="ans-label">${o.label}</span></button>`;
+    }
+    if (q.kind === 'bins') {
+      return `<button class="ans ans-bin" data-value="${value}" style="--bin:${o.color}">
+        <span class="bin-lid"></span>
+        <span class="bin-body">
+          <span class="ans-icon">🗑️</span>
+          <span class="ans-label">${o.label}</span>
+          <span class="ans-sub">${o.sub}</span>
+        </span></button>`;
+    }
+    if (q.kind === 'grid') {
+      const isText = o.icon && !/\p{Extended_Pictographic}/u.test(o.icon);
+      return `<button class="ans ans-tile" data-value="${value}">
+        ${o.icon ? `<span class="ans-icon${isText ? ' ans-icon-text' : ''}">${escapeHtml(o.icon)}</span>` : ''}
+        ${o.label ? `<span class="ans-label">${escapeHtml(o.label)}</span>` : ''}</button>`;
+    }
+    return `<button class="ans ans-choice" data-value="${value}">
+      <span class="ans-key">${'ABCD'[i]}</span><span class="ans-label">${escapeHtml(o.label)}</span></button>`;
+  }
+
+  handleAnswer(value) {
+    const r = this.round;
+    if (!r || r.locked || !r.timer) return;
+    r.locked = true;
+    r.answered++;
+
+    const q = r.q;
+    const isCorrect = String(value) === String(q.answer);
+    const buttons = [...this.optionsContainer.querySelectorAll('[data-value]')];
+    const chosenBtn = buttons.find(b => b.dataset.value === String(value));
+    const correctBtn = buttons.find(b => b.dataset.value === String(q.answer));
+    buttons.forEach(b => b.classList.add('locked'));
 
     if (isCorrect) {
-      this.correctCount++;
-      this.score += 10;
-      this.hudScoreText.textContent = this.score;
+      r.correct++;
+      r.streak++;
+      r.bestStreak = Math.max(r.bestStreak, r.streak);
+      const pts = LEVELS[q.level].points + (r.streak >= 3 ? STREAK_BONUS : 0);
+      r.score += pts;
+      this.hudScoreText.textContent = r.score;
+      this.popScore(`+${pts}`);
       window.soundEngine.playCorrect();
+      chosenBtn && chosenBtn.classList.add('correct');
+      this.qCard.classList.add('correct-glow');
+      setTimeout(() => this.qCard.classList.remove('correct-glow'), 600);
 
-      clickedBtn.classList.add('correct');
-      this.feedbackBox.className = 'feedback-box show correct-text';
-      this.feedbackText.innerHTML = `<strong>✓ Correct!</strong> ${q.explanation}`;
+      const blank = document.getElementById('q-blank');
+      if (blank) { blank.textContent = q.answer; blank.classList.add('filled'); }
 
-      // Update Stars and confetti burst on star progression
-      const prevStars = this.stars;
-      this.stars = this.calculateStars(this.correctCount);
-      this.updateLiveStars(this.stars);
-
-      if (this.stars > prevStars) {
-        window.soundEngine.playStar(this.stars);
-        window.confettiEngine.burst();
+      if (STREAK_MILESTONES.includes(r.streak)) {
+        this.showToast(`🔥 ${r.streak} in a row! Bonus points!`);
+        window.soundEngine.playStar(Math.min(3, STREAK_MILESTONES.indexOf(r.streak) + 1));
+        const rect = this.hudStreak.getBoundingClientRect();
+        window.confettiEngine.burst(rect.left + rect.width / 2, rect.top + rect.height / 2, 40);
       }
+
+      this.feedbackBox.className = 'feedback show good';
+      this.feedbackText.innerHTML = `<strong>✓ Correct!</strong> ${escapeHtml(q.why)}`;
     } else {
+      r.streak = 0;
       window.soundEngine.playIncorrect();
-      clickedBtn.classList.add('incorrect');
+      chosenBtn && chosenBtn.classList.add('incorrect');
+      correctBtn && correctBtn.classList.add('correct');
+      this.qCard.classList.add('shake');
 
-      // Highlight the correct answer
-      allChoiceBtns.forEach(btn => {
-        const text = btn.querySelector('.choice-text').textContent;
-        if (text === q.correct) {
-          btn.classList.add('correct');
-        }
-      });
-
-      this.feedbackBox.className = 'feedback-box show incorrect-text';
-      this.feedbackText.innerHTML = `<strong>✗ Incorrect.</strong> Correct answer: <em>${q.correct}</em>. ${q.explanation}`;
+      const answerOpt = q.options.find(o => String(o.value) === String(q.answer)) || {};
+      const answerLabel = answerOpt.label || answerOpt.icon;
+      this.feedbackBox.className = 'feedback show bad';
+      this.feedbackText.innerHTML = `<strong>✗ It's ${escapeHtml(answerLabel)}.</strong> ${escapeHtml(q.why)}`;
     }
+    this.updateStreak();
 
-    // Advance to next question after a brief delay so user can read explanation
-    setTimeout(() => {
-      this.currentQIndex++;
-      this.renderCurrentQuestion();
-    }, 1300);
+    r.advanceTimer = setTimeout(() => this.nextQuestion(), isCorrect ? ADVANCE_AFTER_CORRECT_MS : ADVANCE_AFTER_WRONG_MS);
   }
 
-  calculateStars(correctMatches) {
-    if (correctMatches >= 7) return 3;
-    if (correctMatches >= 4) return 2;
-    if (correctMatches >= 1) return 1;
-    return 0;
+  popScore(text) {
+    this.scorePop.textContent = text;
+    this.scorePop.classList.remove('pop');
+    void this.scorePop.offsetWidth;
+    this.scorePop.classList.add('pop');
   }
 
-  updateLiveStars(starCount) {
-    this.liveStars.forEach((starEl, index) => {
-      starEl.classList.toggle('inactive', index >= starCount);
-    });
+  updateStreak() {
+    const s = this.round ? this.round.streak : 0;
+    this.hudStreakNum.textContent = s;
+    this.hudStreak.classList.toggle('hot', s >= 3);
   }
 
-  // End of strict 60 seconds
-  async endGame() {
-    this.phenomenonCtrl.stop();
-    if (this.timerInterval) {
-      clearInterval(this.timerInterval);
-      this.timerInterval = null;
-    }
+  calculateStars(correct) {
+    if (correct >= STAR_THRESHOLDS.three) return 3;
+    if (correct >= STAR_THRESHOLDS.two) return 2;
+    return 1; // everyone who plays earns a star
+  }
 
-    const finalStars = Math.max(1, this.calculateStars(this.correctCount)); // grant at least 1 star for participating
-    this.stars = finalStars;
+  async endRound() {
+    const r = this.round;
+    this.stopRound();
+    this.updateTimerDisplay();
 
-    // Sound fanfare & confetti
+    const c = CHALLENGES[this.challengeId];
+    const l = LEVELS[this.level];
+    const stars = this.calculateStars(r.correct);
+    r.stars = stars;
+    const displayName = this.playerName || 'Sloka Star';
+    const accuracy = r.answered > 0 ? Math.round((r.correct / r.answered) * 100) : 0;
+    const rankTitle = RANK_TITLES[stars];
+
     window.soundEngine.playFanfare();
-    window.confettiEngine.burst(window.innerWidth / 2, window.innerHeight * 0.35, 120);
+    window.confettiEngine.burst(window.innerWidth / 2, window.innerHeight * 0.3, 120);
 
-    const displayName = (this.playerName && this.playerName.trim()) ? this.playerName.trim() : 'Sloka Student';
-    const accuracy = this.totalAnswered > 0 ? Math.round((this.correctCount / this.totalAnswered) * 100) + '%' : '0%';
+    const $ = this.$;
+    $('results-player-name').textContent = this.playerName ? `Well played, ${this.playerName}!` : 'Well played!';
+    $('results-game-label').textContent = `${c.icon} ${c.title} · ${l.icon} ${l.label}`;
+    $('res-score-val').textContent = r.score;
+    $('res-correct-val').textContent = r.correct;
+    $('res-accuracy-val').textContent = `${accuracy}%`;
+    $('res-streak-val').textContent = r.bestStreak;
+    $('award-rank-title').textContent = rankTitle;
 
-    // Populate Results Screen
-    this.resultsCadetName.textContent = `Cadet ${displayName}`;
-    this.resScoreVal.textContent = this.score;
-    this.resCorrectVal.textContent = this.correctCount;
-    this.resAccuracyVal.textContent = accuracy;
-
-    // Star rank title
-    let rankTitle = 'NOVICE RESEARCHER';
-    if (finalStars === 2) rankTitle = 'LAB SPECIALIST';
-    if (finalStars === 3) rankTitle = 'SCIENCE FAIR GENIUS';
-    this.awardRankTitle.textContent = rankTitle;
-
-    // Animate Award Stars
     this.awardStars.forEach((starEl, i) => {
       starEl.classList.remove('earned');
-      if (i < finalStars) {
+      if (i < stars) {
         setTimeout(() => {
           starEl.classList.add('earned');
           window.soundEngine.playStar(i + 1);
-        }, (i + 1) * 350);
+        }, 400 + i * 350);
       }
     });
 
-    // Save score to leaderboard
-    window.leaderboardManager.addScore({
-      name: displayName,
-      mode: this.currentMode,
-      score: this.score,
-      stars: finalStars,
-      accuracy: accuracy
+    const entry = window.leaderboardManager.addScore({
+      name: displayName, mode: this.challengeId, level: this.level,
+      score: r.score, stars, accuracy: `${accuracy}%`, correct: r.correct
     });
-    this.updateLeaderboardUI();
+    const rank = window.leaderboardManager.getRank(entry);
+    let message;
+    if (r.score > 0 && rank === 1) message = `🥇 New #1 in ${c.title}!`;
+    else if (r.score > 0 && rank <= 10) message = `🏅 You're #${rank} in ${c.title}!`;
+    else if (stars < 3) message = `Get ${stars === 1 ? STAR_THRESHOLDS.two : STAR_THRESHOLDS.three} correct for ${'★'.repeat(stars + 1)} — try again!`;
+    else message = 'Amazing — all three stars!';
+    $('results-message').textContent = message;
 
-    // Populate Virtual 58mm Thermal Receipt
-    let modeTitleForReceipt = 'SCI SYNONYM MATCH';
-    if (this.currentMode === 'phenomenon') modeTitleForReceipt = 'SCI PHENOMENON GUESS';
-    else if (this.currentMode === 'eng_synonym') modeTitleForReceipt = 'ENG SYNONYM MATCH';
-    else if (this.currentMode === 'eng_idiom') modeTitleForReceipt = 'ENG IDIOM GUESS';
+    // Virtual thermal receipt
+    $('receipt-player-name').textContent = displayName.toUpperCase();
+    $('receipt-mode-name').textContent = c.title.toUpperCase();
+    $('receipt-level').textContent = l.label.toUpperCase();
+    $('receipt-score').textContent = `${r.score} PTS`;
+    $('receipt-date').textContent = new Date().toLocaleDateString();
+    $('receipt-stars').textContent = '★ '.repeat(stars) + '☆ '.repeat(3 - stars);
+    $('receipt-rank').textContent = rankTitle;
 
-    this.receiptPlayerName.textContent = displayName.toUpperCase();
-    this.receiptModeName.textContent = modeTitleForReceipt;
-    this.receiptScore.textContent = `${this.score} PTS`;
-    this.receiptDate.textContent = new Date().toLocaleDateString();
-    this.receiptStars.textContent = '★ '.repeat(finalStars) + '☆ '.repeat(3 - finalStars);
-    this.receiptRank.textContent = rankTitle;
-
-    // Immediate photo initialization (either preserved from quick snap or scientist avatar)
-    const initialPhoto = this.activePhotoData || window.cameraController.capturePhoto();
+    const initialPhoto = window.cameraController.capturePhoto();
     this.receiptPhotoImg.src = initialPhoto;
     this.photoPreviewImg.src = initialPhoto;
 
     this.showScreen('results');
-
-    // Start Live Camera Preview for Keepsake Selfie
+    this.armIdleReset();
     await this.startLiveWebcam();
   }
 
+  armIdleReset() {
+    clearTimeout(this.idleTimer);
+    this.idleTimer = setTimeout(() => {
+      if (this.screens.results.classList.contains('active')) this.newPlayer();
+    }, IDLE_RESET_MS);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Webcam & printing
+  // ---------------------------------------------------------------------------
   async startLiveWebcam() {
     window.cameraController.setVideoElement(this.cameraVideo);
     const cameraStarted = await window.cameraController.startCamera();
-
     if (cameraStarted) {
       this.cameraVideo.style.display = 'block';
       this.photoPreviewImg.style.display = 'none';
     } else {
-      // Fallback: Generate science avatar badge
-      this.snapWebcamPhoto();
+      this.cameraVideo.style.display = 'none';
+      this.photoPreviewImg.style.display = 'block';
     }
   }
 
   snapWebcamPhoto() {
-    // Flash effect
     this.cameraFlash.classList.add('flash');
     setTimeout(() => this.cameraFlash.classList.remove('flash'), 350);
 
     const photoDataUrl = window.cameraController.capturePhoto();
     this.activePhotoData = photoDataUrl;
 
-    // Stop video stream and show frozen photo
     window.cameraController.stopCamera();
     this.cameraVideo.style.display = 'none';
     this.photoPreviewImg.style.display = 'block';
     this.photoPreviewImg.src = photoDataUrl;
-
-    // Update receipt photo
     this.receiptPhotoImg.src = photoDataUrl;
   }
 
   async handleBluetoothPrint() {
-    const displayName = (this.playerName && this.playerName.trim()) ? this.playerName.trim() : 'Sloka Student';
-    let modeTitle = 'SCI SYNONYM MATCH';
-    if (this.currentMode === 'phenomenon') modeTitle = 'SCI PHENOMENON GUESS';
-    else if (this.currentMode === 'eng_synonym') modeTitle = 'ENG SYNONYM MATCH';
-    else if (this.currentMode === 'eng_idiom') modeTitle = 'ENG IDIOM GUESS';
+    if (window.cameraController.isActive) this.snapWebcamPhoto();
 
     if (!window.printerController.isConnected) {
-      const connectSuccess = await window.printerController.connect();
-      if (!connectSuccess) {
-        alert('Could not establish Bluetooth connection to POS-58 printer.\nYou can use the "Print Keepsake Slip (Browser Print)" option below to print on any printer or thermal spool!');
+      const connected = await window.printerController.connect();
+      if (!connected) {
+        alert('Could not connect to the POS-58 printer.\nYou can still use "or use a normal printer" below.');
         return;
       }
     }
 
-    const printSuccess = await window.printerController.printReceipt({
-      playerName: displayName,
-      modeTitle: modeTitle,
-      score: this.score,
-      stars: this.stars,
+    const c = CHALLENGES[this.challengeId];
+    const ok = await window.printerController.printReceipt({
+      playerName: this.playerName || 'Sloka Star',
+      modeTitle: c.title.toUpperCase(),
+      levelLabel: LEVELS[this.level].label.toUpperCase(),
+      score: this.round.score,
+      stars: this.round.stars,
+      rankTitle: RANK_TITLES[this.round.stars],
       dateStr: new Date().toLocaleDateString(),
       imageElement: this.receiptPhotoImg
     });
 
-    if (printSuccess) {
+    if (ok) {
       window.confettiEngine.burst();
-      alert('Keepsake sent to POS-58 thermal printer successfully!');
+      this.showToast('🖨️ Printing your keepsake!');
     } else {
-      alert('Printing via Bluetooth completed or printer queued. If paper did not feed, verify POS58 is powered on with paper roll inserted.');
+      alert('Printing failed. Check the POS-58 is switched on and has paper.');
     }
   }
 
-  // Leaderboard Modal & UI
+  // ---------------------------------------------------------------------------
+  // Leaderboard
+  // ---------------------------------------------------------------------------
   updateLeaderboardUI() {
-    // Mini leaderboard on home screen
     const miniScores = window.leaderboardManager.getScores('all', 3);
     const miniContainer = document.querySelector('.mini-leaderboard-list');
-    if (miniContainer) {
-      miniContainer.innerHTML = '';
-      if (miniScores.length === 0) {
-        miniContainer.innerHTML = `
-          <div class="empty-leaderboard-msg">
-            🌟 <strong>Be the first champion!</strong><br>
-            Complete any 60s challenge above to set a high score.
-          </div>
-        `;
-      } else {
-        miniScores.forEach((s, idx) => {
-          const medals = ['🥇', '🥈', '🥉'];
-          const row = document.createElement('div');
-          row.className = 'mini-score-row';
-          row.innerHTML = `
-            <span class="mini-score-rank">${medals[idx] || (idx + 1)}</span>
-            <span class="mini-score-name">${s.name}</span>
-            <span class="mini-score-pts">${s.score} pts</span>
-          `;
-          miniContainer.appendChild(row);
-        });
-      }
+    if (miniScores.length === 0) {
+      miniContainer.innerHTML = '<span class="mini-empty">Be the first champion today! 🌟</span>';
+      return;
     }
+    const medals = ['🥇', '🥈', '🥉'];
+    miniContainer.innerHTML = miniScores.map((s, i) => `
+      <span class="mini-score">
+        <span>${medals[i]}</span>
+        <span class="mini-name">${escapeHtml(s.name)}</span>
+        <strong>${s.score}</strong>
+      </span>
+    `).join('');
   }
 
   openLeaderboardModal(mode = 'all') {
-    this.renderLeaderboardTable(mode);
+    this.setLeaderboardTab(mode);
     this.modalLeaderboard.classList.add('open');
   }
 
-  renderLeaderboardTable(mode = 'all') {
-    const scores = window.leaderboardManager.getScores(mode, 25);
-    this.leaderboardTbody.innerHTML = '';
-
-    if (scores.length === 0) {
-      this.leaderboardTbody.innerHTML = `
-        <tr>
-          <td colspan="5" style="text-align:center; padding:36px 16px; color:#94a3b8; font-size:0.95rem;">
-            🌟 <strong>No scores recorded yet!</strong><br>
-            <span style="font-size:0.82rem; color:#64748b; margin-top:4px; display:inline-block;">
-              Start any 60-second challenge at Edu Fair 2026 to claim the #1 spot!
-            </span>
-          </td>
-        </tr>
-      `;
-      return;
-    }
-
-    const medals = ['🥇', '🥈', '🥉'];
-    const modeBadgeMap = {
-      'synonym': '🔬 Sci Syn',
-      'phenomenon': '🌌 Sci Phen',
-      'eng_synonym': '📖 Eng Syn',
-      'eng_idiom': '🎭 Eng Idiom'
-    };
-
-    scores.forEach((s, index) => {
-      const tr = document.createElement('tr');
-      const starStr = '★'.repeat(s.stars);
-      const modeBadge = modeBadgeMap[s.mode] || s.mode;
-
-      tr.innerHTML = `
-        <td><span class="rank-badge">${medals[index] || '#' + (index + 1)}</span></td>
-        <td><strong>${s.name}</strong></td>
-        <td><span style="font-size:0.8rem; color:var(--cyan-glow);">${modeBadge}</span></td>
-        <td style="color:var(--amber-gold);">${starStr}</td>
-        <td><strong style="color:var(--emerald-glow); font-family:var(--font-mono);">${s.score}</strong></td>
-      `;
-      this.leaderboardTbody.appendChild(tr);
-    });
+  setLeaderboardTab(mode) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+    this.renderLeaderboardTable(mode);
   }
 
-  // Monitor Online/Offline state for PWA Kiosk
+  renderLeaderboardTable(mode = 'all') {
+    const scores = window.leaderboardManager.getScores(mode, 50);
+    if (scores.length === 0) {
+      this.leaderboardTbody.innerHTML = `
+        <tr><td colspan="6" class="lb-empty">🌟 <strong>No scores yet!</strong><br>Play any game to claim the #1 spot.</td></tr>`;
+      return;
+    }
+    const medals = ['🥇', '🥈', '🥉'];
+    this.leaderboardTbody.innerHTML = scores.map((s, i) => {
+      const c = CHALLENGES[s.mode];
+      const l = LEVELS[s.level];
+      return `<tr>
+        <td class="lb-rank">${medals[i] || i + 1}</td>
+        <td class="lb-name">${escapeHtml(s.name)}</td>
+        <td>${c ? `${c.icon} ${c.title}` : escapeHtml(s.mode)}</td>
+        <td>${l ? `${l.icon} ${l.label}` : '-'}</td>
+        <td class="lb-stars">${'★'.repeat(s.stars)}</td>
+        <td class="lb-score">${s.score}</td>
+      </tr>`;
+    }).join('');
+  }
+
   initNetworkStatus() {
-    const dot = document.getElementById('network-status-dot');
-    const text = document.getElementById('network-status-text');
-
+    const dot = this.$('network-status-dot');
+    const text = this.$('network-status-text');
     const updateStatus = () => {
-      const isOnline = navigator.onLine;
-      if (dot && text) {
-        if (isOnline) {
-          dot.className = 'net-dot';
-          text.textContent = 'Online';
-        } else {
-          dot.className = 'net-dot offline';
-          text.textContent = 'Offline Kiosk';
-        }
-      }
+      dot.className = navigator.onLine ? 'net-dot' : 'net-dot offline';
+      text.textContent = navigator.onLine ? 'Online' : 'Offline';
     };
-
     window.addEventListener('online', updateStatus);
     window.addEventListener('offline', updateStatus);
     updateStatus();
   }
 }
 
-// Register PWA ServiceWorker for 100% Offline Kiosk Operation
+// Register PWA ServiceWorker for 100% offline kiosk operation
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then((reg) => {
-        console.log('[PWA] ServiceWorker registered successfully for 100% offline operation:', reg.scope);
-      })
-      .catch((err) => {
-        console.warn('[PWA] ServiceWorker registration failed:', err);
-      });
+    navigator.serviceWorker.register('./sw.js').catch((err) => {
+      console.warn('[PWA] ServiceWorker registration failed:', err);
+    });
   });
 }
 
-// Initialize Application once DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-  window.scienceApp = new ScienceFairApp();
+  window.eduFairApp = new EduFairApp();
 });

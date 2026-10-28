@@ -1,7 +1,8 @@
 // Progressive Web App Service Worker
 // Enables 100% Offline Kiosk Operation for Edu Fair 2026 (Sloka The School)
 
-const CACHE_NAME = 'sloka-edufair-cache-v1';
+// Bump this whenever app files change so tablets pick up the new version
+const CACHE_NAME = 'sloka-edufair-cache-v2';
 
 const STATIC_ASSETS = [
   './',
@@ -11,9 +12,7 @@ const STATIC_ASSETS = [
   './assets/logo.jpg',
   './js/app.js',
   './js/audio.js',
-  './js/questions.js',
-  './js/synonymIllustrations.js',
-  './js/phenomenonAnimations.js',
+  './js/challenges.js',
   './js/camera.js',
   './js/printer.js',
   './js/leaderboard.js',

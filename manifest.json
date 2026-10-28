@@ -1,13 +1,13 @@
 {
   "name": "Edu Fair 2026 - Sloka The School",
   "short_name": "EduFair 2026",
-  "description": "Educational Knowledge Challenge for Edu Fair 2026 at Sloka The School. Created & Designed by Joshitha, Grade 6C.",
+  "description": "60-Second Challenge for Edu Fair 2026 at Sloka The School: Fact or Fiction, Eco Sorter, Odd One Out, Math Blitz and Word Wizard. Created & designed by Joshitha, Grade 6C.",
   "start_url": "./index.html",
   "scope": "./",
-  "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#070a14",
-  "theme_color": "#0a0f1d",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#fff8e7",
+  "theme_color": "#ffc800",
   "icons": [
     {
       "src": "assets/logo.jpg",
@@ -17,4 +17,3 @@
     }
   ]
 }
-

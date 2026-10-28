@@ -22,9 +22,7 @@ jobs:
         run: |
           node -c server.js
           node -c js/app.js
-          node -c js/questions.js
-          node -c js/synonymIllustrations.js
-          node -c js/phenomenonAnimations.js
+          node -c js/challenges.js
           node -c js/camera.js
           node -c js/printer.js
           node -c js/leaderboard.js
