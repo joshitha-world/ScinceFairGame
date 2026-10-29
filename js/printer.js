@@ -218,8 +218,15 @@ class ThermalPrinterController {
     if (imageElement) {
       try {
         const printWidth = 384; // Standard POS58 dot width
-        const ratio = imageElement.height / imageElement.width;
-        const printHeight = Math.min(320, Math.round(printWidth * ratio));
+        // Use the real pixel size, not the on-screen size of the <img>
+        const srcW = imageElement.naturalWidth || imageElement.width;
+        const srcH = imageElement.naturalHeight || imageElement.height;
+        const printHeight = Math.min(384, Math.round(printWidth * (srcH / srcW)));
+
+        // Centre-crop to the print box instead of stretching
+        const scale = Math.max(printWidth / srcW, printHeight / srcH);
+        const cropW = printWidth / scale;
+        const cropH = printHeight / scale;
 
         const canvas = document.createElement('canvas');
         canvas.width = printWidth;
@@ -227,7 +234,7 @@ class ThermalPrinterController {
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, printWidth, printHeight);
-        ctx.drawImage(imageElement, 0, 0, printWidth, printHeight);
+        ctx.drawImage(imageElement, (srcW - cropW) / 2, (srcH - cropH) / 2, cropW, cropH, 0, 0, printWidth, printHeight);
 
         const imgData = ctx.getImageData(0, 0, printWidth, printHeight);
         const { packed, bytesPerRow } = this.ditherImageTo1Bit(imgData, printWidth, printHeight);
