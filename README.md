@@ -28,7 +28,7 @@ You can also directly double-click [`index.html`](file:///c:/Users/lenovo/OneDri
 
 ## 🎮 The Games
 
-Every round is **60 seconds**. Each game uses one simple mechanic so a new player understands it in seconds.
+Every round is **60 seconds** (Riddle Time gets 90, since riddles need reading time). Each game uses one simple mechanic so a new player understands it in seconds.
 
 | Game | Subject | How you play |
 |---|---|---|
@@ -37,7 +37,9 @@ Every round is **60 seconds**. Each game uses one simple mechanic so a new playe
 | 🔍 **Odd One Out** | Think Smart | Four picture tiles: tap the one that doesn't belong |
 | ⚡ **Math Blitz** | Mental Maths | Solve and tap. Questions are generated, so they never run out |
 | 📝 **Word Wizard** | English | Fill the blank, fix the grammar, spot the correct spelling |
-| 🎲 **Mega Mix** | Everything | Each question is a surprise from the five games above |
+| 🧩 **Word Builder** | Prefixes & Suffixes | Snap the right prefix or suffix (un-, re-, -ful, -less…) onto a word to match its meaning; the new word appears |
+| 🦉 **Riddle Time** | Traditional Riddles | Classic riddles and Indian paheli, with picture answers. 💡 Hint removes 2 wrong answers for half points. 90-second rounds |
+| 🎲 **Mega Mix** | Everything | Each question is a surprise from the games switched on in Settings |
 
 After every answer a one-line explanation appears, so players learn even when they're wrong.
 
@@ -60,7 +62,7 @@ After every answer a one-line explanation appears, so players learn even when th
 
 ## ✏️ Editing questions
 
-All content lives in [`js/challenges.js`](js/challenges.js), grouped by game and level (`FACT_BANK`, `ECO_BANK`, `ODD_BANK`, `WORD_BANK`). Add a line in the same format and it shows up in the game. Math questions come from `MATH_GENERATORS`. After changing any file, bump `CACHE_NAME` in [`sw.js`](sw.js) so tablets pick up the new version.
+All content lives in [`js/challenges.js`](js/challenges.js), grouped by game and level (`FACT_BANK`, `ECO_BANK`, `ODD_BANK`, `WORD_BANK`, `AFFIX_BANK`, `RIDDLE_BANK`). Add a line in the same format and it shows up in the game. Math questions come from `MATH_GENERATORS`. After changing any file, bump `CACHE_NAME` in [`sw.js`](sw.js) so tablets pick up the new version.
 
 ## 📷 Keepsake photo & 🖨️ POS-58 printing
 
@@ -75,6 +77,7 @@ All content lives in [`js/challenges.js`](js/challenges.js), grouped by game and
 
 ## 🧭 Kiosk tips
 
+- Tap ⚙️ in the header to choose which games appear on the home screen (saved on the tablet).
 - Tap ⛶ in the header for full screen (or "Add to Home screen" to launch as a full-screen app).
 - The results screen returns to Home automatically after 2 minutes idle, ready for the next visitor. **New player** clears the name.
 - Keyboard: `A`–`D` / `1`–`4` to answer, `←`/`→` for Fact or Fiction, `Enter` for next.

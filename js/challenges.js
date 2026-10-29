@@ -29,13 +29,22 @@ const CHALLENGES = {
     id: 'word', title: 'Word Wizard', subject: 'English', icon: '📝', color: '#ea580c',
     howTo: 'Fill the blank or pick the right word to fix the sentence.'
   },
+  affix: {
+    id: 'affix', title: 'Word Builder', subject: 'Prefixes & Suffixes', icon: '🧩', color: '#db2777',
+    howTo: 'Snap the right prefix or suffix onto the word to match its meaning. Watch your new word appear!'
+  },
+  riddle: {
+    id: 'riddle', title: 'Riddle Time', subject: 'Traditional Riddles', icon: '🦉', color: '#7c4a1e', seconds: 90,
+    howTo: 'Read the riddle and tap the answer. Stuck? Tap 💡 to remove two wrong answers (for half points).'
+  },
   mix: {
     id: 'mix', title: 'Mega Mix', subject: 'A bit of everything', icon: '🎲', color: '#e3141c',
-    howTo: 'Every question is a surprise from all five games. Stay sharp!'
+    howTo: 'Every question is a surprise from the other games. Stay sharp!'
   }
 };
 
-const PLAYABLE_CHALLENGES = ['fact', 'eco', 'odd', 'math', 'word'];
+const PLAYABLE_CHALLENGES = ['fact', 'eco', 'odd', 'math', 'word', 'affix', 'riddle'];
+const DEFAULT_ROUND_SECONDS = 60;
 
 // ---------------------------------------------------------------------------
 // Fact or Fiction: [icon, statement, isFact, explanation]
@@ -291,6 +300,118 @@ const WORD_BANK = {
 };
 
 // ---------------------------------------------------------------------------
+// Word Builder: [pre|suf, root, correct affix, [3 wrong affixes], meaning, built word, tip]
+// Each clue is written so only one option makes a real word with that meaning.
+// ---------------------------------------------------------------------------
+const AFFIX_BANK = {
+  easy: [
+    ['pre', 'happy', 'un', ['re', 'dis', 'pre'], 'not happy', 'unhappy', '"Un-" means not.'],
+    ['pre', 'play', 're', ['un', 'dis', 'mis'], 'play again', 'replay', '"Re-" means again.'],
+    ['pre', 'lock', 'un', ['re', 'pre', 'mis'], 'open the lock', 'unlock', '"Un-" can mean to undo something.'],
+    ['pre', 'fair', 'un', ['re', 'pre', 'mis'], 'not fair', 'unfair', '"Un-" means not.'],
+    ['pre', 'write', 're', ['un', 'dis', 'mis'], 'write again', 'rewrite', '"Re-" means again.'],
+    ['suf', 'help', 'ful', ['less', 'ness', 'ly'], 'full of help', 'helpful', '"-ful" means full of.'],
+    ['suf', 'care', 'less', ['ful', 'ness', 'ing'], 'without care', 'careless', '"-less" means without.'],
+    ['suf', 'fear', 'less', ['ful', 'ly', 'er'], 'without fear', 'fearless', '"-less" means without.'],
+    ['suf', 'teach', 'er', ['ful', 'less', 'ly'], 'a person who teaches', 'teacher', '"-er" can mean a person who does something.'],
+    ['suf', 'paint', 'er', ['ful', 'less', 'ly'], 'a person who paints', 'painter', '"-er" can mean a person who does something.'],
+    ['suf', 'quick', 'ly', ['er', 'ness', 'ful'], 'in a quick way', 'quickly', '"-ly" tells us how something is done.'],
+    ['suf', 'tall', 'est', ['er', 'ly', 'ness'], 'the most tall', 'tallest', '"-est" means the most.'],
+    ['suf', 'big', 'er', ['est', 'ly', 'ful'], 'more big', 'bigger', '"-er" means more. Double the g: big → bigger!'],
+    ['suf', 'jump', 'ed', ['ing', 'er', 'ly'], 'it already happened', 'jumped', '"-ed" shows something happened in the past.'],
+    ['suf', 'colour', 'ful', ['less', 'ly', 'er'], 'full of colour', 'colourful', '"-ful" means full of.']
+  ],
+  medium: [
+    ['pre', 'agree', 'dis', ['un', 'mis', 're'], 'not agree', 'disagree', '"Dis-" means not, or the opposite of.'],
+    ['pre', 'spell', 'mis', ['dis', 'un', 'pre'], 'spell wrongly', 'misspell', '"Mis-" means wrongly. Keep both s\'s: mis + spell.'],
+    ['pre', 'view', 'pre', ['re', 'dis', 'mis'], 'see before', 'preview', '"Pre-" means before. (Review means see again.)'],
+    ['pre', 'possible', 'im', ['un', 'in', 'dis'], 'not possible', 'impossible', 'Before p, b or m, "in-" changes to "im-".'],
+    ['pre', 'correct', 'in', ['un', 'dis', 'im'], 'not correct', 'incorrect', '"In-" means not.'],
+    ['pre', 'sleep', 'over', ['under', 'mis', 're'], 'sleep too long', 'oversleep', '"Over-" means too much.'],
+    ['pre', 'marine', 'sub', ['super', 'inter', 're'], 'under the sea', 'submarine', '"Sub-" means under.'],
+    ['pre', 'national', 'inter', ['sub', 'super', 'un'], 'between nations', 'international', '"Inter-" means between.'],
+    ['suf', 'kind', 'ness', ['ful', 'less', 'ly'], 'the quality of being kind', 'kindness', '"-ness" turns a describing word into a noun.'],
+    ['suf', 'read', 'able', ['ful', 'less', 'ness'], 'can be read', 'readable', '"-able" means can be done.'],
+    ['suf', 'enjoy', 'ment', ['ful', 'ness', 'less'], 'the act of enjoying', 'enjoyment', '"-ment" turns an action into a noun.'],
+    ['suf', 'happy', 'ness', ['ful', 'ly', 'less'], 'the feeling of being happy', 'happiness', 'Change y to i: happy → happiness.'],
+    ['suf', 'danger', 'ous', ['ful', 'less', 'ness'], 'full of danger', 'dangerous', '"-ous" means full of.'],
+    ['suf', 'child', 'hood', ['ish', 'less', 'ful'], 'the time of being a child', 'childhood', '"-hood" means a time or state of being.'],
+    ['suf', 'power', 'ful', ['less', 'ness', 'ly'], 'having lots of power', 'powerful', '"-ful" means full of.']
+  ],
+  hard: [
+    ['pre', 'legal', 'il', ['un', 'in', 'im'], 'not legal', 'illegal', 'Before l, "in-" changes to "il-".'],
+    ['pre', 'regular', 'ir', ['un', 'in', 'im'], 'not regular', 'irregular', 'Before r, "in-" changes to "ir-".'],
+    ['pre', 'function', 'mal', ['mis', 'dis', 'un'], 'work badly', 'malfunction', '"Mal-" means badly.'],
+    ['pre', 'circle', 'semi', ['bi', 'tri', 'sub'], 'half a circle', 'semicircle', '"Semi-" means half.'],
+    ['pre', 'cycle', 'bi', ['tri', 'uni', 'semi'], 'a cycle with two wheels', 'bicycle', '"Bi-" means two (tri- is three, uni- is one).'],
+    ['pre', 'biography', 'auto', ['bio', 'tele', 'micro'], 'a life story written by that person', 'autobiography', '"Auto-" means self.'],
+    ['pre', 'scope', 'tele', ['micro', 'peri', 'stetho'], 'a tool to see far away', 'telescope', '"Tele-" means far (micro- means small).'],
+    ['pre', 'septic', 'anti', ['pro', 'auto', 'micro'], 'fights germs', 'antiseptic', '"Anti-" means against.'],
+    ['pre', 'human', 'super', ['sub', 'inter', 'anti'], 'beyond normal human powers', 'superhuman', '"Super-" means above or beyond.'],
+    ['pre', 'understand', 'mis', ['dis', 'un', 're'], 'understand wrongly', 'misunderstand', '"Mis-" means wrongly.'],
+    ['suf', 'simple', 'ify', ['ness', 'ism', 'ment'], 'to make simple', 'simplify', '"-ify" means to make. Drop the e: simple → simplify.'],
+    ['suf', 'art', 'ist', ['ful', 'less', 'ism'], 'a person who makes art', 'artist', '"-ist" means a person who does or makes something.'],
+    ['suf', 'appear', 'ance', ['ment', 'ness', 'ful'], 'the act of appearing', 'appearance', '"-ance" turns an action into a noun.'],
+    ['suf', 'fame', 'ous', ['ful', 'less', 'ly'], 'having fame', 'famous', '"-ous" means having. Drop the e: fame → famous.'],
+    ['suf', 'friend', 'ship', ['hood', 'ness', 'less'], 'the bond between friends', 'friendship', '"-ship" means a state or bond.']
+  ]
+};
+
+// ---------------------------------------------------------------------------
+// Riddle Time: [riddle, [icon, answer], [[icon, wrong] x3], explanation, origin?]
+// ---------------------------------------------------------------------------
+const RIDDLE_BANK = {
+  easy: [
+    ['I have hands but I cannot clap. I tell you something new every minute.', ['⏰', 'A clock'], [['🌳', 'A tree'], ['🧤', 'A glove'], ['🤖', 'A robot']], 'A clock has hands that point to the time.'],
+    ['I have lots of keys, but I can\'t open a single lock.', ['🎹', 'A piano'], [['🚪', 'A door'], ['🚗', 'A car'], ['🧰', 'A toolbox']], 'A piano\'s keys make music, not open doors!'],
+    ['What has to be broken before you can use it?', ['🥚', 'An egg'], [['🥛', 'A glass'], ['📦', 'A box'], ['✏️', 'A pencil']], 'You crack an egg before cooking it.'],
+    ['I\'m tall when I\'m young and short when I\'m old.', ['🕯️', 'A candle'], [['🌳', 'A tree'], ['🎈', 'A balloon'], ['🦒', 'A giraffe']], 'A candle melts shorter as it burns.'],
+    ['What has legs but cannot walk?', ['🪑', 'A chair'], [['🐕', 'A dog'], ['🐦', 'A bird'], ['🐜', 'An ant']], 'A chair stands on legs but never moves.'],
+    ['What goes up but never comes down?', ['🎂', 'Your age'], [['🎈', 'A balloon'], ['🚀', 'A rocket'], ['⚽', 'A ball']], 'Every birthday, your age goes up — never down!'],
+    ['I am full of holes, but I can still hold water.', ['🧽', 'A sponge'], [['🥅', 'A net'], ['🧺', 'A basket'], ['🧀', 'Cheese']], 'A sponge soaks water into its tiny holes.'],
+    ['I run but never walk. I have a mouth but never talk.', ['🏞️', 'A river'], [['🐕', 'A dog'], ['⏰', 'A clock'], ['🚗', 'A car']], 'Rivers "run" and flow out at a "mouth".'],
+    ['What can you catch but never throw?', ['🤧', 'A cold'], [['⚽', 'A ball'], ['🐟', 'A fish'], ['🥏', 'A frisbee']], 'You can catch a cold, but you can\'t throw one!'],
+    ['I have a neck but no head, and I wear a cap.', ['🍾', 'A bottle'], [['🦒', 'A giraffe'], ['👕', 'A shirt'], ['🖊️', 'A pen']], 'A bottle has a narrow neck and a cap on top.'],
+    ['A plate full of pearls is held upside down over everyone\'s head.', ['🌌', 'The starry sky'], [['☂️', 'An umbrella'], ['🌧️', 'A rain cloud'], ['💡', 'A lamp']], 'The night sky is the plate, and the stars are its pearls.', 'Traditional Indian paheli'],
+    ['What has words but never speaks?', ['📖', 'A book'], [['🦜', 'A parrot'], ['📻', 'A radio'], ['📱', 'A phone']], 'A book is full of words but is always silent.'],
+    ['What has an eye but cannot see?', ['🧵', 'A needle'], [['🦉', 'An owl'], ['📷', 'A camera'], ['🐟', 'A fish']], 'The thread goes through the needle\'s "eye".'],
+    ['What gets bigger the more you take away from it?', ['🕳️', 'A hole'], [['🍰', 'A cake'], ['🎈', 'A balloon'], ['🌳', 'A tree']], 'Dig more out and the hole grows bigger!']
+  ],
+  medium: [
+    ['The more you take, the more you leave behind.', ['👣', 'Footsteps'], [['📸', 'Photos'], ['🍪', 'Cookies'], ['💰', 'Money']], 'Every step you take leaves a footprint behind.'],
+    ['I have cities but no houses, forests but no trees, and rivers but no water.', ['🗺️', 'A map'], [['🖼️', 'A painting'], ['💭', 'A dream'], ['📺', 'A TV']], 'A map shows cities, forests and rivers — but only as drawings.'],
+    ['I can travel around the world while staying in a corner.', ['✉️', 'A stamp'], [['✈️', 'An aeroplane'], ['🕷️', 'A spider'], ['🛰️', 'A satellite']], 'A postage stamp sits in the corner of a letter that travels the world.'],
+    ['Green she stands in the king\'s garden, wrapped in a shawl, hiding a lakh of pearls.', ['🌽', 'A corn cob'], [['🍉', 'A watermelon'], ['🦚', 'A peacock'], ['🥬', 'A cabbage']], 'The husk is the shawl and the kernels are the pearls.', 'Traditional Indian paheli'],
+    ['Black but not a crow, long but not a snake, it twists but is not a rope.', ['👧', 'A hair plait'], [['🛣️', 'A road'], ['👤', 'A shadow'], ['🐛', 'A caterpillar']], 'A plait (choti) is black, long and twisted.', 'Traditional Indian paheli'],
+    ['A tree has twelve branches. Each branch has about thirty leaves, half dark and half light.', ['📆', 'A year'], [['🌳', 'A banyan tree'], ['⏰', 'A clock'], ['🌴', 'A coconut tree']], '12 months, about 30 days each, and every day has a night and a day.', 'Traditional riddle'],
+    ['What has a head and a tail but no body?', ['💰', 'A coin'], [['🐍', 'A snake'], ['🐟', 'A fish'], ['🦎', 'A lizard']], 'Coins have "heads" on one side and "tails" on the other.'],
+    ['What month has 28 days?', ['📅', 'All of them'], [['❄️', 'February'], ['🗓️', 'Only leap years'], ['🚫', 'None']], 'Every month has at least 28 days!'],
+    ['What belongs to you, but other people use it more than you do?', ['🏷️', 'Your name'], [['🧸', 'Your toys'], ['📱', 'Your phone'], ['🏠', 'Your house']], 'Other people say your name far more often than you do.'],
+    ['I am so fragile that if you say my name, you break me.', ['🤫', 'Silence'], [['🥛', 'A glass'], ['🥚', 'An egg'], ['💡', 'A bulb']], 'Saying "silence" out loud breaks the silence!'],
+    ['I am as light as a feather, yet the strongest person can\'t hold me for five minutes.', ['🌬️', 'Your breath'], [['🎈', 'A balloon'], ['☁️', 'A cloud'], ['🐦', 'A bird']], 'Nobody can hold their breath for five minutes.'],
+    ['I have one head, one foot and four legs.', ['🛏️', 'A bed'], [['🐄', 'A cow'], ['🕷️', 'A spider'], ['🪑', 'A chair']], 'A bed has a headboard, a foot end and four legs.'],
+    ['Two brothers live on either side of a hill, yet they never see each other.', ['👀', 'Your eyes'], [['👟', 'Your shoes'], ['🦶', 'Your feet'], ['🤲', 'Your hands']], 'Your eyes sit on each side of your nose and can\'t see each other.', 'Traditional riddle'],
+    ['What goes through towns and fields but never moves?', ['🛣️', 'A road'], [['🚆', 'A train'], ['🌬️', 'The wind'], ['🐄', 'A cow']], 'A road passes through places while staying still.']
+  ],
+  hard: [
+    ['Forward I am heavy, but backward I am not.', ['⚖️', 'A ton'], [['🐘', 'An elephant'], ['⛰️', 'A stone'], ['🏋️', 'A weight']], 'Spell "ton" backwards and you get "not"!'],
+    ['What can fill a room but takes up no space?', ['💡', 'Light'], [['💨', 'Air'], ['💧', 'Water'], ['🛋️', 'Furniture']], 'Light fills a room but takes up no space. (Air does take up space!)'],
+    ['What word becomes shorter when you add two letters to it?', ['📏', 'Short'], [['📐', 'Long'], ['🔎', 'Small'], ['🐜', 'Tiny']], 'Short + "er" = shorter!'],
+    ['I speak without a mouth and hear without ears. Mountains are where I like to call out.', ['🏔️', 'An echo'], [['📻', 'A radio'], ['👻', 'A ghost'], ['🦜', 'A parrot']], 'An echo repeats your voice back from mountains and walls.'],
+    ['I have keys but no locks, space but no room. You can enter, but you can\'t go inside.', ['⌨️', 'A keyboard'], [['🎹', 'A piano'], ['🏨', 'A hotel'], ['🔐', 'A safe']], 'A keyboard has keys, a space bar and an Enter key.'],
+    ['What comes once in a minute, twice in a moment, but never in a thousand years?', ['🔤', 'The letter M'], [['⏱️', 'A second'], ['👁️', 'A blink'], ['🌠', 'A shooting star']], 'Look at the spelling: Minute, MoMent — but no M in "a thousand years".'],
+    ['I have branches but no fruit, trunk or leaves.', ['🏦', 'A bank'], [['🌳', 'A tree'], ['🌵', 'A cactus'], ['🥥', 'A coconut']], 'Banks have branches in many cities.'],
+    ['If you have me, you want to share me. Once you share me, you no longer have me.', ['🤫', 'A secret'], [['💰', 'Money'], ['🍕', 'A pizza'], ['🧸', 'A toy']], 'Once you tell a secret, it isn\'t a secret any more.'],
+    ['What can you hold in your right hand but never in your left hand?', ['💪', 'Your left elbow'], [['🖊️', 'A pen'], ['⚽', 'A ball'], ['📱', 'A phone']], 'Try it — your left hand can\'t reach your own left elbow!'],
+    ['What has thirteen hearts but no other organs?', ['🃏', 'A deck of cards'], [['🐙', 'An octopus'], ['💝', 'A gift box'], ['🏥', 'A hospital']], 'A deck has 13 cards in the hearts suit. (An octopus has 3 hearts!)'],
+    ['A man walked in the pouring rain with no umbrella or hat, yet not a single hair on his head got wet.', ['🧑', 'He was bald'], [['🏃', 'He ran fast'], ['🌦️', 'It was light rain'], ['🧥', 'He wore a coat']], 'No hair on his head means none of it could get wet!'],
+    ['What has a bottom at the top?', ['🦵', 'Your legs'], [['⛰️', 'A mountain'], ['🍾', 'A bottle'], ['🥛', 'A glass']], 'Your legs have your "bottom" at the top of them!'],
+    ['The more of me there is, the less you see.', ['🌑', 'Darkness'], [['🔭', 'A telescope'], ['💡', 'Light'], ['👓', 'Glasses']], 'The darker it gets, the less you can see.'],
+    ['I am always coming, but I never arrive.', ['📅', 'Tomorrow'], [['🚌', 'The bus'], ['🌅', 'Sunrise'], ['🎁', 'A parcel']], 'When tomorrow comes, it becomes today!']
+  ]
+};
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 function shuffleArray(array) {
@@ -484,6 +605,22 @@ const QUESTION_BUILDERS = {
       sub: prompt.includes('___') ? 'Pick the word that fits the blank' : 'Tap the correct answer',
       options: shuffleArray(opts).map(o => ({ value: o, label: o })), answer: opts[0], why
     };
+  },
+
+  affix(level, deck) {
+    const [type, root, correct, wrong, meaning, word, why] = deck.draw(`affix:${level}`, AFFIX_BANK[level]);
+    const label = (a) => (type === 'pre' ? `${a}-` : `-${a}`);
+    return {
+      kind: 'choice', variant: 'build', prompt: word, sub: `Make a word that means "${meaning}"`,
+      build: { type, root, word },
+      options: shuffleArray([correct, ...wrong]).map(a => ({ value: a, label: label(a) })), answer: correct, why
+    };
+  },
+
+  riddle(level, deck) {
+    const [riddle, [icon, answer], wrong, why, origin] = deck.draw(`riddle:${level}`, RIDDLE_BANK[level]);
+    const tiles = shuffleArray([[icon, answer], ...wrong]).map(([i, l]) => ({ value: l, icon: i, label: l }));
+    return { kind: 'grid', variant: 'riddle', prompt: riddle, tag: origin, hintable: true, options: tiles, answer, why };
   }
 };
 

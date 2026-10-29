@@ -1,6 +1,5 @@
 // Edu Fair 2026 - 60-Second Challenge: Master App Controller
 
-const ROUND_SECONDS = 60;
 const STREAK_BONUS = 5;              // extra points per answer while on a 3+ streak
 const STREAK_MILESTONES = [3, 5, 10, 15, 20];
 const ADVANCE_AFTER_CORRECT_MS = 1300;
@@ -15,6 +14,7 @@ class EduFairApp {
   constructor() {
     this.playerName = '';
     this.level = localStorage.getItem('edufair_level') || 'mixed';
+    this.hiddenGames = this.loadHiddenGames();
     this.challengeId = null;
     this.deck = new QuestionDeck();
     this.round = null;
@@ -99,8 +99,14 @@ class EduFairApp {
     `).join('');
     this.setLevel(this.level);
 
+    this.renderGameTiles();
+  }
+
+  renderGameTiles() {
+    const visible = Object.values(CHALLENGES).filter(c => !this.hiddenGames.includes(c.id));
     const grid = this.$('challenge-grid');
-    grid.innerHTML = Object.values(CHALLENGES).map(c => `
+    grid.dataset.count = visible.length;
+    grid.innerHTML = visible.map(c => `
       <button class="game-tile" data-challenge="${c.id}" style="--c:${c.color}">
         <span class="game-icon">${c.icon}</span>
         <span class="game-text">
@@ -108,8 +114,59 @@ class EduFairApp {
           <span class="game-title">${c.title}</span>
         </span>
         <span class="game-play">▶</span>
+        ${c.seconds ? `<span class="game-time">⏱️ ${c.seconds}s</span>` : ''}
       </button>
     `).join('');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Settings: which games appear on the home screen
+  // ---------------------------------------------------------------------------
+  loadHiddenGames() {
+    try {
+      const saved = JSON.parse(localStorage.getItem('edufair_hidden_games') || '[]');
+      return Array.isArray(saved) ? saved.filter(id => CHALLENGES[id]) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  saveHiddenGames() {
+    localStorage.setItem('edufair_hidden_games', JSON.stringify(this.hiddenGames));
+    this.renderGameTiles();
+  }
+
+  // Games Mega Mix may draw from: the visible ones, or all of them if none are visible
+  mixPool() {
+    const visible = PLAYABLE_CHALLENGES.filter(id => !this.hiddenGames.includes(id));
+    return visible.length ? visible : PLAYABLE_CHALLENGES;
+  }
+
+  openSettings() {
+    this.$('settings-games').innerHTML = Object.values(CHALLENGES).map(c => `
+      <label class="setting-row" style="--c:${c.color}">
+        <span class="setting-icon">${c.icon}</span>
+        <span class="setting-text"><strong>${c.title}</strong><small>${c.subject}${c.seconds ? ` · ${c.seconds}s round` : ''}</small></span>
+        <input type="checkbox" class="switch" data-game="${c.id}" ${this.hiddenGames.includes(c.id) ? '' : 'checked'}>
+      </label>
+    `).join('');
+    this.$('modal-settings').classList.add('open');
+  }
+
+  onSettingToggle(input) {
+    const id = input.dataset.game;
+    if (input.checked) {
+      this.hiddenGames = this.hiddenGames.filter(g => g !== id);
+    } else {
+      const visibleCount = Object.keys(CHALLENGES).length - this.hiddenGames.length;
+      if (visibleCount <= 1) {
+        input.checked = true;
+        this.showToast('Keep at least one game on the home screen');
+        return;
+      }
+      this.hiddenGames.push(id);
+    }
+    this.saveHiddenGames();
   }
 
   setLevel(level) {
@@ -169,6 +226,22 @@ class EduFairApp {
       }
     });
 
+    // Settings modal
+    $('btn-settings').addEventListener('click', () => this.openSettings());
+    $('btn-close-settings').addEventListener('click', () => $('modal-settings').classList.remove('open'));
+    $('btn-settings-done').addEventListener('click', () => $('modal-settings').classList.remove('open'));
+    $('modal-settings').addEventListener('click', (e) => {
+      if (e.target.id === 'modal-settings') e.target.classList.remove('open');
+    });
+    $('settings-games').addEventListener('change', (e) => {
+      if (e.target.matches('.switch')) this.onSettingToggle(e.target);
+    });
+    $('btn-settings-show-all').addEventListener('click', () => {
+      this.hiddenGames = [];
+      this.saveHiddenGames();
+      this.openSettings();
+    });
+
     // Leaderboard modal
     $('btn-open-leaderboard').addEventListener('click', () => this.openLeaderboardModal('all'));
     $('btn-view-all-scores').addEventListener('click', () => this.openLeaderboardModal('all'));
@@ -199,6 +272,9 @@ class EduFairApp {
     // Game
     $('btn-quit').addEventListener('click', () => this.confirmLeaveRound() && this.showScreen('home'));
     $('btn-next').addEventListener('click', () => this.nextQuestion());
+    this.feedbackText.addEventListener('click', (e) => {
+      if (e.target.closest('#btn-hint')) this.useHint();
+    });
     this.optionsContainer.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-value]');
       if (btn) this.handleAnswer(btn.dataset.value);
@@ -329,7 +405,7 @@ class EduFairApp {
 
     this.$('countdown-icon').textContent = c.icon;
     this.$('countdown-title').textContent = c.title;
-    this.$('countdown-level').textContent = `${l.icon} ${l.label} · ${l.who}`;
+    this.$('countdown-level').textContent = `${l.icon} ${l.label} · ${l.who} · ⏱️ ${c.seconds || DEFAULT_ROUND_SECONDS}s`;
     this.$('countdown-howto').textContent = c.howTo;
     this.countdown.style.setProperty('--c', c.color);
     this.countdown.classList.add('open');
@@ -364,8 +440,9 @@ class EduFairApp {
     const c = CHALLENGES[this.challengeId];
     this.round = {
       score: 0, correct: 0, answered: 0, streak: 0, bestStreak: 0,
-      timeLeft: ROUND_SECONDS, timer: null, advanceTimer: null, q: null, locked: false, lastChallenge: null
+      totalSeconds: c.seconds || DEFAULT_ROUND_SECONDS, timer: null, advanceTimer: null, q: null, locked: false, lastChallenge: null
     };
+    this.round.timeLeft = this.round.totalSeconds;
     this.activePhotoData = null;
 
     this.screens.game.style.setProperty('--c', c.color);
@@ -402,7 +479,7 @@ class EduFairApp {
   updateTimerDisplay() {
     const t = this.round.timeLeft;
     this.hudTimerText.textContent = t;
-    this.timerFill.style.width = `${(t / ROUND_SECONDS) * 100}%`;
+    this.timerFill.style.width = `${(t / this.round.totalSeconds) * 100}%`;
     this.hudTimerBox.classList.toggle('warning', t <= 20 && t > 10);
     this.hudTimerBox.classList.toggle('critical', t <= 10);
   }
@@ -423,7 +500,8 @@ class EduFairApp {
 
     let challenge = this.challengeId;
     if (challenge === 'mix') {
-      const choices = PLAYABLE_CHALLENGES.filter(id => id !== r.lastChallenge);
+      const pool = this.mixPool();
+      const choices = pool.length > 1 ? pool.filter(id => id !== r.lastChallenge) : pool;
       challenge = pick(choices);
     }
     r.lastChallenge = challenge;
@@ -431,6 +509,7 @@ class EduFairApp {
     const level = this.currentQuestionLevel();
     r.q = buildQuestion(challenge, level, this.deck, { binCount: this.level === 'easy' ? 2 : 3 });
     r.locked = false;
+    r.hintUsed = false;
     this.renderQuestion(r.q);
   }
 
@@ -443,10 +522,12 @@ class EduFairApp {
     this.playArea.style.setProperty('--qc', c.color);
     this.hudLevel.textContent = this.level === 'mixed' ? `🎲 Mixed · now ${l.label}` : `${l.icon} ${l.label}`;
 
-    this.qTag.textContent = this.challengeId === 'mix' ? `${c.icon} ${c.title}` : `Question ${this.round.answered + 1}`;
+    const tagParts = [this.challengeId === 'mix' ? `${c.icon} ${c.title}` : `Question ${this.round.answered + 1}`];
+    if (q.tag) tagParts.push(q.tag);
+    this.qTag.textContent = tagParts.join(' · ');
     this.qIcon.textContent = q.icon || '';
     this.qIcon.style.display = q.icon ? '' : 'none';
-    this.qPrompt.innerHTML = escapeHtml(q.prompt).replace('___', '<span class="blank" id="q-blank">?</span>');
+    this.qPrompt.innerHTML = q.build ? this.buildPromptHtml(q.build) : escapeHtml(q.prompt).replace('___', '<span class="blank" id="q-blank">?</span>');
     this.qSub.textContent = q.sub || '';
 
     this.qCard.classList.remove('shake', 'enter');
@@ -454,9 +535,13 @@ class EduFairApp {
     this.qCard.classList.add('enter');
 
     this.feedbackBox.className = 'feedback';
-    this.feedbackText.innerHTML = q.kind === 'binary'
-      ? '👈 Swipe or tap 👉'
-      : `<span class="feedback-hint">${escapeHtml(c.howTo.split('.')[0])}.</span>`;
+    if (q.kind === 'binary') {
+      this.feedbackText.innerHTML = '👈 Swipe or tap 👉';
+    } else if (q.hintable) {
+      this.feedbackText.innerHTML = '<button class="hint-btn" id="btn-hint">💡 Hint: remove 2 wrong answers <small>(half points)</small></button>';
+    } else {
+      this.feedbackText.innerHTML = `<span class="feedback-hint">${escapeHtml(c.howTo.split('.')[0])}.</span>`;
+    }
 
     this.optionsContainer.className = `answers answers-${q.kind} count-${q.options.length}`;
     this.optionsContainer.innerHTML = q.options.map((o, i) => this.renderOption(q, o, i)).join('');
@@ -504,7 +589,8 @@ class EduFairApp {
       r.correct++;
       r.streak++;
       r.bestStreak = Math.max(r.bestStreak, r.streak);
-      const pts = LEVELS[q.level].points + (r.streak >= 3 ? STREAK_BONUS : 0);
+      const base = LEVELS[q.level].points;
+      const pts = (r.hintUsed ? base / 2 : base) + (r.streak >= 3 ? STREAK_BONUS : 0);
       r.score += pts;
       this.hudScoreText.textContent = r.score;
       this.popScore(`+${pts}`);
@@ -514,7 +600,7 @@ class EduFairApp {
       setTimeout(() => this.qCard.classList.remove('correct-glow'), 600);
 
       const blank = document.getElementById('q-blank');
-      if (blank) { blank.textContent = q.answer; blank.classList.add('filled'); }
+      if (blank && !q.build) { blank.textContent = q.answer; blank.classList.add('filled'); }
 
       if (STREAK_MILESTONES.includes(r.streak)) {
         this.showToast(`🔥 ${r.streak} in a row! Bonus points!`);
@@ -537,9 +623,43 @@ class EduFairApp {
       this.feedbackBox.className = 'feedback show bad';
       this.feedbackText.innerHTML = `<strong>✗ It's ${escapeHtml(answerLabel)}.</strong> ${escapeHtml(q.why)}`;
     }
+    if (q.build) this.revealBuiltWord(q, isCorrect);
     this.updateStreak();
 
     r.advanceTimer = setTimeout(() => this.nextQuestion(), isCorrect ? ADVANCE_AFTER_CORRECT_MS : ADVANCE_AFTER_WRONG_MS);
+  }
+
+  // Word Builder: [slot] + root  (or root + [slot]) = ?
+  buildPromptHtml({ type, root }) {
+    const slot = '<span class="build-tile build-slot blank" id="q-blank">?</span>';
+    const rootTile = `<span class="build-tile build-root">${escapeHtml(root)}</span>`;
+    const parts = type === 'pre' ? [slot, rootTile] : [rootTile, slot];
+    return `<span class="build-eq">${parts.join('<span class="build-op">+</span>')}</span>
+      <span class="build-result" id="build-result">= <span class="build-word">?</span></span>`;
+  }
+
+  revealBuiltWord(q, isCorrect) {
+    const slot = document.getElementById('q-blank');
+    if (slot) {
+      slot.textContent = q.options.find(o => o.value === q.answer).label;
+      slot.classList.add('filled');
+    }
+    const result = document.getElementById('build-result');
+    if (!result) return;
+    result.innerHTML = `= <span class="build-word">${escapeHtml(q.build.word)}</span>${isCorrect ? ' ✨' : ''}`;
+    result.classList.add('revealed', isCorrect ? 'good' : 'bad');
+  }
+
+  // Riddle hint: knock out two wrong answers; the answer is then worth half
+  useHint() {
+    const r = this.round;
+    if (!r || r.locked || r.hintUsed) return;
+    r.hintUsed = true;
+    const wrong = [...this.optionsContainer.querySelectorAll('[data-value]')]
+      .filter(b => b.dataset.value !== String(r.q.answer));
+    shuffleArray(wrong).slice(0, 2).forEach(b => b.classList.add('eliminated'));
+    window.soundEngine.playClick();
+    this.feedbackText.innerHTML = '<span class="feedback-hint">💡 Two wrong answers removed — now pick!</span>';
   }
 
   popScore(text) {

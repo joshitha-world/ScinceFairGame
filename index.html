@@ -38,6 +38,7 @@
         </button>
         <button class="icon-btn" id="btn-open-leaderboard" title="Top scores">🏆<span class="icon-btn-label">Top Scores</span></button>
         <button class="icon-btn" id="btn-sound-toggle" title="Sound on/off"><span id="sound-icon">🔊</span></button>
+        <button class="icon-btn" id="btn-settings" title="Settings: choose games">⚙️</button>
         <button class="icon-btn" id="btn-fullscreen" title="Full screen">⛶</button>
       </div>
     </header>
@@ -229,6 +230,23 @@
         <button class="tool-btn" id="btn-export-csv">📥 Export CSV</button>
         <button class="tool-btn" id="btn-sync-scores">🔄 Sync to server</button>
         <button class="tool-btn danger" id="btn-clear-scores">🗑️ Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: SETTINGS ================= -->
+  <div class="modal-overlay" id="modal-settings">
+    <div class="modal-box settings-box">
+      <div class="modal-header">
+        <h3>⚙️ Settings</h3>
+        <button class="close-modal-btn" id="btn-close-settings">&times;</button>
+      </div>
+      <div class="settings-section-title">Games on the home screen</div>
+      <p class="settings-note">Turn games on or off. Mega Mix only uses the games that are switched on.</p>
+      <div class="settings-games" id="settings-games"><!-- built in JS --></div>
+      <div class="leaderboard-footer-tools">
+        <button class="tool-btn" id="btn-settings-show-all">Show all games</button>
+        <button class="btn btn-primary" id="btn-settings-done">Done</button>
       </div>
     </div>
   </div>
