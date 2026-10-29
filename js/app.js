@@ -30,6 +30,21 @@ class EduFairApp {
     this.initNetworkStatus();
     this.updateLeaderboardUI();
     this.soundIcon.textContent = window.soundEngine.isMuted() ? '🔇' : '🔊';
+    this.setPhotoLeft(this.loadPhotoLeft());
+  }
+
+  // Keepsake photo side: Android tablets (camera on the left in landscape) default to the
+  // photo on the left so players look towards the camera; laptops keep it in the middle.
+  loadPhotoLeft() {
+    const saved = localStorage.getItem('edufair_photo_left');
+    if (saved !== null) return saved === 'true';
+    return /Android/i.test(navigator.userAgent);
+  }
+
+  setPhotoLeft(on) {
+    this.photoLeft = on;
+    localStorage.setItem('edufair_photo_left', String(on));
+    document.body.classList.toggle('photo-left', on);
   }
 
   initDOMElements() {
@@ -150,6 +165,7 @@ class EduFairApp {
         <input type="checkbox" class="switch" data-game="${c.id}" ${this.hiddenGames.includes(c.id) ? '' : 'checked'}>
       </label>
     `).join('');
+    this.$('setting-photo-left').checked = this.photoLeft;
     this.$('modal-settings').classList.add('open');
   }
 
@@ -236,6 +252,7 @@ class EduFairApp {
     $('settings-games').addEventListener('change', (e) => {
       if (e.target.matches('.switch')) this.onSettingToggle(e.target);
     });
+    $('setting-photo-left').addEventListener('change', (e) => this.setPhotoLeft(e.target.checked));
     $('btn-settings-show-all').addEventListener('click', () => {
       this.hiddenGames = [];
       this.saveHiddenGames();

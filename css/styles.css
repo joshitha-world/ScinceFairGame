@@ -771,6 +771,10 @@ input { font-family: inherit; user-select: text; -webkit-user-select: text; }
   .results-summary { justify-content: center; }
   .results-stats { grid-template-columns: repeat(2, 1fr); }
   .results-actions { grid-column: 1 / -1; }
+
+  /* Tablet camera on the left: put the photo at the far left so players face the camera */
+  body.photo-left #screen-results { grid-template-columns: 1.3fr 1fr; }
+  body.photo-left .keepsake { order: -1; }
 }
 
 /* ================= SMALL / SHORT SCREENS ================= */

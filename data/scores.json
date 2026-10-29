@@ -24,5 +24,18 @@
     "date": "2026-10-28",
     "timestamp": 1793152023000,
     "synced": false
+  },
+  {
+    "id": "sloka_1793313029649_5ynzm",
+    "name": "Sloka Star",
+    "mode": "affix",
+    "level": "mixed",
+    "score": 0,
+    "correct": 0,
+    "stars": 1,
+    "accuracy": "0%",
+    "date": "2026-10-29",
+    "timestamp": 1793313029649,
+    "synced": false
   }
 ]
