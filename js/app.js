@@ -529,6 +529,9 @@ class EduFairApp {
     this.qIcon.style.display = q.icon ? '' : 'none';
     this.qPrompt.innerHTML = q.build ? this.buildPromptHtml(q.build) : escapeHtml(q.prompt).replace('___', '<span class="blank" id="q-blank">?</span>');
     this.qSub.textContent = q.sub || '';
+    if (q.build) {
+      this.qSub.innerHTML = `Make a word that means<span class="build-meaning">"${escapeHtml(q.build.meaning)}"</span>`;
+    }
 
     this.qCard.classList.remove('shake', 'enter');
     void this.qCard.offsetWidth;

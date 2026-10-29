@@ -636,6 +636,19 @@ input { font-family: inherit; user-select: text; -webkit-user-select: text; }
 .build-result.bad .build-word { background: var(--good-soft); color: var(--good); padding: 0 0.3em; border-radius: 10px; }
 [data-variant="build"] .ans-choice { justify-content: center; font-size: 2rem; letter-spacing: 1px; }
 [data-variant="build"] .ans-key { display: none; }
+/* The meaning is the question: show it first and large, above the word tiles */
+[data-variant="build"] .q-card { justify-content: flex-start; gap: 1.2rem; padding-top: 2.6rem; }
+[data-variant="build"] .q-sub {
+  order: -1;
+  display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+  font-size: 1.5rem; font-weight: 800; color: var(--ink-soft);
+}
+[data-variant="build"] .q-prompt { margin: auto 0; }
+.build-meaning {
+  font-size: 2.6rem; font-weight: 900; line-height: 1.2; color: var(--ink);
+  background: linear-gradient(transparent 60%, color-mix(in srgb, var(--qc) 25%, transparent) 60%);
+  padding: 0 0.3rem;
+}
 
 /* ================= RIDDLES ================= */
 [data-variant="riddle"] .q-card { padding: 1.4rem 1.6rem 1.2rem; }

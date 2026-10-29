@@ -612,7 +612,7 @@ const QUESTION_BUILDERS = {
     const label = (a) => (type === 'pre' ? `${a}-` : `-${a}`);
     return {
       kind: 'choice', variant: 'build', prompt: word, sub: `Make a word that means "${meaning}"`,
-      build: { type, root, word },
+      build: { type, root, word, meaning },
       options: shuffleArray([correct, ...wrong]).map(a => ({ value: a, label: label(a) })), answer: correct, why
     };
   },
