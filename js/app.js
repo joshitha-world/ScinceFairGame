@@ -33,7 +33,9 @@ class EduFairApp {
     this.setPhotoLeft(this.loadPhotoLeft());
     this.studio = new DoodleStudio(this);
     this.quest = new WordQuest(this);
+    this.robo = new RoboAcademy(this);
     if (location.hash === '#quest') this.quest.open();
+    if (location.hash === '#robo') this.robo.open();
   }
 
   // Keepsake photo side: Android tablets (camera on the left in landscape) default to the
@@ -54,7 +56,7 @@ class EduFairApp {
     const $ = (id) => document.getElementById(id);
     this.$ = $;
 
-    this.screens = { home: $('screen-home'), game: $('screen-game'), results: $('screen-results'), studio: $('screen-studio'), quest: $('screen-quest') };
+    this.screens = { home: $('screen-home'), game: $('screen-game'), results: $('screen-results'), studio: $('screen-studio'), quest: $('screen-quest'), robo: $('screen-robo') };
     this.playerNameInput = $('player-name-input');
 
     // HUD
@@ -126,7 +128,7 @@ class EduFairApp {
     const wide = this.$('wide-row');
     // Doodle Studio and Word Quest are wide banners in their own row below the quiz tiles
     const tile = c => `
-      <button class="game-tile${c.studio ? ' studio-tile' : ''}${c.quest ? ' quest-tile' : ''}" data-challenge="${c.id}" style="--c:${c.color}">
+      <button class="game-tile${c.studio ? ' studio-tile' : ''}${c.quest ? ' quest-tile' : ''}${c.robo ? ' robo-tile' : ''}" data-challenge="${c.id}" style="--c:${c.color}">
         <span class="game-icon">${c.icon}</span>
         <span class="game-text">
           <span class="game-subject">${c.subject}</span>
@@ -436,6 +438,10 @@ class EduFairApp {
     }
     if (CHALLENGES[challengeId].quest) {
       this.quest.open();
+      return;
+    }
+    if (CHALLENGES[challengeId].robo) {
+      this.robo.open();
       return;
     }
     this.challengeId = challengeId;

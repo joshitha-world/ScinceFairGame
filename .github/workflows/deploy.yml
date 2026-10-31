@@ -32,6 +32,9 @@ jobs:
           node -c js/wordquest-store.js
           node -c js/wordquest-print.js
           node -c js/wordquest.js
+          node -c js/qr.js
+          node -c js/robo-data.js
+          node -c js/robo.js
           node -c wordquest-server.js
           node -c js/audio.js
           node -c js/confetti.js

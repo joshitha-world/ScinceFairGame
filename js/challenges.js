@@ -48,6 +48,10 @@ const CHALLENGES = {
   // Personal daily learning with its own levels, sign-in and sticker book
   quest: {
     id: 'quest', title: 'Word Quest', subject: 'A word a day · Weekend quiz · Stickers', icon: '📚', color: '#7c3aed', quest: true, wide: true
+  },
+  // 24-week electronics → robotics → AI course, one lesson a day
+  robo: {
+    id: 'robo', title: 'Robo Academy', subject: 'Electronics → Robots → AI', icon: '🤖', color: '#0369a1', robo: true, wide: true
   }
 };
 

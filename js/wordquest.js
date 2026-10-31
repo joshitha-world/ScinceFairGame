@@ -252,6 +252,8 @@ class WordQuest {
     this.draft = null;
     this.play = null;
     this.printJob = null;
+    this.returnTo = null;    // 'robo' when Robo Academy borrowed the sign-up / profile screens
+    this.modalOwner = null;  // which screen opened the shared modal
     this.store = new WQStore(() => this.renderChrome());
     this.bind();
     this.renderChrome();
@@ -403,6 +405,10 @@ class WordQuest {
   }
 
   go(view, params = {}) {
+    if (this.returnTo === 'robo' && (view === 'dash' || view === 'welcome')) {
+      this.returnTo = null;
+      return this.app.robo.open();
+    }
     if (!this.store.current && !['welcome', 'create', 'signin'].includes(view)) view = 'welcome';
     this.view = view;
     this.params = params;
@@ -484,7 +490,7 @@ class WordQuest {
   }
 
   startCreate() {
-    this.draft = { name: '', avatar: wqPick(WQ_AVATARS), track: '' };
+    this.draft = { name: '', avatar: wqPick(WQ_AVATARS), track: this.returnTo === 'robo' ? 'master' : '' };
     this.go('create');
   }
 
@@ -1584,5 +1590,6 @@ class WordQuest {
   closeModal() {
     this.modal.classList.remove('open');
     this.printJob = null;
+    this.modalOwner = null;
   }
 }

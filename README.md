@@ -68,6 +68,27 @@ A personal learning journey for home or class, separate from the 60-second games
 
 Passkeys need the real **https://** site or `http://localhost`; on a plain `http://192.168…` address learners can still use “Just this device”. Server data lives in `data/wordquest.json` (the Docker setup mounts `./data` so it survives rebuilds). Words are in [`js/wordquest-data.js`](js/wordquest-data.js); add weeks in the same format.
 
+## 🤖 Robo Academy (electronics → robotics → AI)
+
+A self-paced, 24-week course for anyone who wants to become a robotics engineer: **one lesson a day**, a **weekly test** for a passport stamp, and real hands-on builds.
+
+| Stage | Weeks | What you learn |
+|---|---|---|
+| ⚡ Spark Cadet | 1–3 | Electricity, Ohm's law, safety, LEDs, resistors, breadboards, series/parallel, multimeter, capacitors, diodes |
+| 🔧 Circuit Builder | 4–6 | Transistors, sensors, voltage dividers, relays, schematics, regulators, soldering, binary, logic gates, the 555 |
+| 💻 Code Ninja | 7–11 | Arduino: blink, variables, serial, buttons, loops, analogRead, PWM, ultrasonic/DHT11/PIR/IR sensors, servos, displays, music, functions |
+| 🛠️ Embedded Maker | 12–15 | millis(), UART/I2C/SPI, Bluetooth, DC/stepper motors and drivers, ESP32 Wi-Fi web servers, IoT, interrupts, state machines, debugging |
+| 🤖 Robot Engineer | 16–20 | Build a 2WD robot: obstacle avoider, line follower with PID, phone web-app control, IMU and encoders |
+| 🧠 AI Roboticist | 21–24 | Machine learning, Teachable Machine, ESP32-CAM, TinyML (Edge Impulse), Raspberry Pi + Python + OpenCV, capstone AI robot with a web dashboard |
+
+- **Every lesson:** the idea, key facts, code (for programming days), a fun fact, a **🎬 YouTube search** button for the topic, 2 quick questions, and a hands-on **mission** checklist. Up to 3 stars.
+- **Daily lab sheet** (thermal print): the idea, key facts, code, mission checkboxes, exercise questions with answer lines, a sketch box, and a **QR code that opens the YouTube search** on a phone. Answers are printed upside down. Day 4 sheets include next week's parts to order.
+- **Pacing:** one new lesson unlocks per day (a grown-up setting allows more). After 5 lessons, the **weekly test** (10 questions, pass 60%, gold *distinction* stamp at 90%) unlocks the next week. Unlimited retries; the best result is kept.
+- **Engineer's Passport:** 24 stamps, printable as cut-out stamps. Ranks rise with each stage; XP and a daily streak keep it motivating.
+- **Parts list:** every week's components, a week ahead, with "have it" ticks and a printable shopping list.
+- **Lab simulators:** Ohm's Law Playground, Resistor Decoder (with challenges), Binary Switches, Logic Gate Lab and PWM Dimmer.
+- Learners, passkeys and syncing are **shared with Word Quest**. Open directly with **`/#robo`**. Course content lives in [`js/robo-data.js`](js/robo-data.js).
+
 ## 🎚️ Levels
 
 | Level | For | Points per correct answer |
@@ -128,5 +149,8 @@ All content lives in [`js/challenges.js`](js/challenges.js), grouped by game and
     ├── wordquest-merge.js  # Progress merging shared by browser and server
     ├── wordquest-store.js  # Learners on the device, passkeys, server sync
     ├── wordquest-print.js  # Worksheets, stickers and learner cards for the thermal printer
-    └── wordquest.js        # Word Quest screens: lesson, puzzles, quiz, sticker book
+    ├── wordquest.js        # Word Quest screens: lesson, puzzles, quiz, sticker book
+    ├── qr.js               # Tiny QR code generator (YouTube links on lab sheets)
+    ├── robo-data.js        # Robo Academy: 6 stages, 24 weeks, 120 lessons, weekly parts lists
+    └── robo.js             # Robo Academy screens, lab simulators, lab sheets, stamps
 ```

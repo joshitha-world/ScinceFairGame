@@ -105,11 +105,13 @@ const WQPasskey = {
   }
 };
 
-const wqEmptyProgress = () => ({ days: {}, quizzes: {}, stickers: {} });
+const wqEmptyProgress = () => ({ days: {}, quizzes: {}, stickers: {}, robo: { lessons: {}, tests: {} } });
 
 class WQStore {
   constructor(onChange) {
-    this.onChange = onChange || (() => {});
+    // Word Quest and Robo Academy share learners; each screen adds a listener
+    this.listeners = onChange ? [onChange] : [];
+    this.onChange = () => this.listeners.forEach(fn => fn());
     this.entries = this.read('wq_learners', []);
     if (!Array.isArray(this.entries)) this.entries = [];
     this.currentKey = localStorage.getItem('wq_current');
