@@ -2,7 +2,7 @@
 // Enables 100% Offline Kiosk Operation for Edu Fair 2026 (Sloka The School)
 
 // Bump this whenever app files change so tablets pick up the new version
-const CACHE_NAME = 'sloka-edufair-cache-v7';
+const CACHE_NAME = 'sloka-edufair-cache-v8';
 
 const STATIC_ASSETS = [
   './',
@@ -16,6 +16,7 @@ const STATIC_ASSETS = [
   './js/camera.js',
   './js/printer.js',
   './js/leaderboard.js',
+  './js/studio.js',
   './js/confetti.js'
 ];
 

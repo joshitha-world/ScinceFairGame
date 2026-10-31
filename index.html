@@ -198,6 +198,38 @@
           <button class="btn btn-primary btn-big" id="btn-results-play-again">🔄 Play again</button>
         </div>
       </section>
+      <!-- ================= SCREEN 4: DOODLE STUDIO ================= -->
+      <section id="screen-studio" class="screen">
+        <div class="studio-bar">
+          <button class="hud-quit" id="studio-back" title="Back to games">←</button>
+          <div class="studio-name"><span class="hud-icon">🎨</span><strong>Doodle Studio</strong></div>
+          <div class="studio-actions">
+            <button class="bar-btn" id="studio-undo" title="Undo">↶<small>Undo</small></button>
+            <button class="bar-btn" id="studio-redo" title="Redo">↷<small>Redo</small></button>
+            <button class="bar-btn" id="studio-mirror" title="Mirror drawing">🪞<small>Mirror</small></button>
+            <button class="bar-btn" id="studio-pages-btn" title="Colouring pages">📄<small>Pages</small></button>
+            <button class="bar-btn" id="studio-look" title="See how it will print">👁️<small>Print look</small></button>
+            <button class="bar-btn danger" id="studio-clear" title="Clear drawing">🗑️<small>Clear</small></button>
+            <button class="btn btn-primary studio-done" id="studio-done">✓ Done</button>
+          </div>
+        </div>
+        <div class="studio-main">
+          <div class="studio-tools" id="studio-tools"></div>
+          <div class="studio-canvas-wrap" id="studio-canvas-wrap">
+            <div class="studio-canvas-stack" id="studio-canvas-stack">
+              <canvas id="studio-paint"></canvas>
+              <canvas id="studio-lines"></canvas>
+              <canvas id="studio-overlay"></canvas>
+              <canvas id="studio-preview"></canvas>
+            </div>
+          </div>
+          <div class="studio-side">
+            <div class="studio-colors" id="studio-colors"></div>
+            <div class="studio-sizes" id="studio-sizes"></div>
+            <div class="studio-options" id="studio-options"></div>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
 
@@ -236,6 +268,65 @@
     </div>
   </div>
 
+  <!-- ================= MODAL: COLOURING PAGES ================= -->
+  <div class="modal-overlay" id="modal-studio-pages">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>📄 Pick a colouring page</h3>
+        <button class="close-modal-btn" id="btn-close-studio-pages">&times;</button>
+      </div>
+      <div class="studio-pages" id="studio-pages"></div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: FINISH DRAWING ================= -->
+  <div class="modal-overlay" id="modal-studio-finish">
+    <div class="modal-box studio-finish">
+      <div class="modal-header">
+        <h3>🎉 Your masterpiece!</h3>
+        <button class="close-modal-btn" id="btn-close-studio-finish">&times;</button>
+      </div>
+      <div class="finish-body">
+        <div class="finish-preview">
+          <canvas id="studio-finish-preview"></canvas>
+          <small>This is exactly how it prints — black dots on the paper.</small>
+        </div>
+        <div class="finish-form">
+          <label class="finish-field"><span>Artist name</span><input type="text" id="studio-artist" maxlength="20" placeholder="Your name"></label>
+          <label class="finish-field"><span>Name your drawing</span><input type="text" id="studio-title" maxlength="28" placeholder="e.g. My Happy Owl"></label>
+          <div class="finish-field">
+            <span>Print style</span>
+            <div class="opt-row" id="studio-print-style">
+              <button class="opt-pill active" data-print-style="shade">🎨 Shaded colours</button>
+              <button class="opt-pill" data-print-style="bold">✏️ Bold lines</button>
+            </div>
+          </div>
+          <button class="btn btn-dark btn-big" id="studio-print">🖨️ Print my drawing</button>
+          <div class="finish-row">
+            <button class="btn btn-ghost" id="studio-save">💾 Save picture</button>
+            <button class="btn btn-ghost" id="studio-browser-print">📄 Normal printer</button>
+          </div>
+          <div class="finish-status" id="studio-print-status"></div>
+          <div class="finish-row">
+            <button class="btn btn-ghost" id="studio-keep-drawing">✏️ Keep drawing</button>
+            <button class="btn btn-ghost" id="studio-new">🆕 New drawing</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slip used only when printing a drawing on a normal printer -->
+  <div class="drawing-slip" id="drawing-slip">
+    <div class="receipt-center receipt-title">DOODLE STUDIO</div>
+    <div class="receipt-center receipt-small">Sloka The School • Manikonda</div>
+    <img id="drawing-slip-img" alt="Drawing">
+    <div class="receipt-center receipt-strong" id="drawing-slip-title"></div>
+    <div class="receipt-center" id="drawing-slip-artist"></div>
+    <div class="receipt-center receipt-small" id="drawing-slip-date"></div>
+    <div class="receipt-center receipt-small">App by Joshitha (Grade 6B)</div>
+  </div>
+
   <!-- ================= MODAL: SETTINGS ================= -->
   <div class="modal-overlay" id="modal-settings">
     <div class="modal-box settings-box">
@@ -268,6 +359,7 @@
   <script src="js/camera.js"></script>
   <script src="js/printer.js"></script>
   <script src="js/leaderboard.js"></script>
+  <script src="js/studio.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

@@ -120,15 +120,20 @@ class ThermalPrinterController {
     this.characteristic = null;
   }
 
-  // Convert canvas/image to 1-bit Floyd-Steinberg dithered monochrome raster for POS58
-  ditherImageTo1Bit(imageData, width, height) {
+  // Convert canvas/image to a 1-bit raster for POS58.
+  // 'fs' (Floyd-Steinberg) suits photos; 'bayer' (ordered) turns flat drawing colours into clean,
+  // even dot patterns instead of grainy noise. gamma > 1 darkens mid-tones so light colours still print.
+  ditherImageTo1Bit(imageData, width, height, gamma = 1, method = 'fs') {
+    if (method === 'bayer') return this.orderedDither(imageData, width, height, gamma);
+    if (method === 'bold') return this.boldThreshold(imageData, width, height);
     const data = imageData.data;
     const gray = new Float32Array(width * height);
 
     // Convert to grayscale
     for (let i = 0; i < width * height; i++) {
       const idx = i * 4;
-      gray[i] = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+      const g = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+      gray[i] = gamma === 1 ? g : 255 * Math.pow(g / 255, gamma);
     }
 
     // Floyd-Steinberg error diffusion
@@ -148,7 +153,45 @@ class ThermalPrinterController {
       }
     }
 
-    // Pack 8 bits per byte (columns 0..width-1)
+    return this.packBitmap(bitmap, width, height);
+  }
+
+  orderedDither(imageData, width, height, gamma) {
+    const BAYER8 = [
+      0, 32, 8, 40, 2, 34, 10, 42, 48, 16, 56, 24, 50, 18, 58, 26,
+      12, 44, 4, 36, 14, 46, 6, 38, 60, 28, 52, 20, 62, 30, 54, 22,
+      3, 35, 11, 43, 1, 33, 9, 41, 51, 19, 59, 27, 49, 17, 57, 25,
+      15, 47, 7, 39, 13, 45, 5, 37, 63, 31, 55, 23, 61, 29, 53, 21
+    ];
+    const data = imageData.data;
+    const bitmap = new Uint8Array(width * height);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = y * width + x;
+        const p = i * 4;
+        let g = 0.299 * data[p] + 0.587 * data[p + 1] + 0.114 * data[p + 2];
+        if (gamma !== 1) g = 255 * Math.pow(g / 255, gamma);
+        const threshold = (BAYER8[(y % 8) * 8 + (x % 8)] + 0.5) * 4;
+        bitmap[i] = g < threshold ? 1 : 0;
+      }
+    }
+    return this.packBitmap(bitmap, width, height);
+  }
+
+  // Anything that isn't near-white prints solid black: crisp coloured lines and writing
+  boldThreshold(imageData, width, height) {
+    const data = imageData.data;
+    const bitmap = new Uint8Array(width * height);
+    for (let i = 0; i < bitmap.length; i++) {
+      const p = i * 4;
+      const g = 0.299 * data[p] + 0.587 * data[p + 1] + 0.114 * data[p + 2];
+      bitmap[i] = g < 215 ? 1 : 0;
+    }
+    return this.packBitmap(bitmap, width, height);
+  }
+
+  // Pack 8 bits per byte (columns 0..width-1); 1 = black dot
+  packBitmap(bitmap, width, height) {
     const bytesPerRow = Math.ceil(width / 8);
     const packed = new Uint8Array(bytesPerRow * height);
 
@@ -162,7 +205,54 @@ class ThermalPrinterController {
       }
     }
 
-    return { packed, bytesPerRow, width, height };
+    return { packed, bitmap, bytesPerRow, width, height };
+  }
+
+  // Scale any image/canvas to the 384-dot print width (centre-cropped to maxHeight) and dither it.
+  // Returns the packed raster for the printer plus a black/white canvas for on-screen previews.
+  renderThermal(source, { maxHeight = 384, gamma = 1, method = 'fs' } = {}) {
+    const printWidth = 384;
+    const srcW = source.naturalWidth || source.width;
+    const srcH = source.naturalHeight || source.height;
+    const printHeight = Math.min(maxHeight, Math.round(printWidth * (srcH / srcW)));
+
+    const scale = Math.max(printWidth / srcW, printHeight / srcH);
+    const cropW = printWidth / scale;
+    const cropH = printHeight / scale;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = printWidth;
+    canvas.height = printHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, printWidth, printHeight);
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(source, (srcW - cropW) / 2, (srcH - cropH) / 2, cropW, cropH, 0, 0, printWidth, printHeight);
+
+    const imgData = ctx.getImageData(0, 0, printWidth, printHeight);
+    const result = this.ditherImageTo1Bit(imgData, printWidth, printHeight, gamma, method);
+
+    // Paint the dots back onto the canvas so it doubles as a "what will print" preview
+    const out = imgData.data;
+    for (let i = 0; i < result.bitmap.length; i++) {
+      const v = result.bitmap[i] ? 0 : 255;
+      out[i * 4] = out[i * 4 + 1] = out[i * 4 + 2] = v;
+      out[i * 4 + 3] = 255;
+    }
+    ctx.putImageData(imgData, 0, 0);
+    return { ...result, canvas };
+  }
+
+  // GS v 0 raster image, sent in bands: many cheap POS-58 printers drop tall single images
+  appendRaster(append, { packed, bytesPerRow, height }) {
+    const BAND = 128;
+    append([0x1B, 0x61, 0x01]); // centre
+    for (let y = 0; y < height; y += BAND) {
+      const rows = Math.min(BAND, height - y);
+      append([0x1D, 0x76, 0x30, 0x00, bytesPerRow % 256, Math.floor(bytesPerRow / 256), rows % 256, Math.floor(rows / 256)]);
+      append(Array.from(packed.subarray(y * bytesPerRow, (y + rows) * bytesPerRow)));
+    }
+    append([0x0A]);
   }
 
   // Generate ESC/POS commands
@@ -217,40 +307,7 @@ class ThermalPrinterController {
     // If an image (badge or webcam photo) is provided, render ESC/POS raster bitmap (GS v 0)
     if (imageElement) {
       try {
-        const printWidth = 384; // Standard POS58 dot width
-        // Use the real pixel size, not the on-screen size of the <img>
-        const srcW = imageElement.naturalWidth || imageElement.width;
-        const srcH = imageElement.naturalHeight || imageElement.height;
-        const printHeight = Math.min(384, Math.round(printWidth * (srcH / srcW)));
-
-        // Centre-crop to the print box instead of stretching
-        const scale = Math.max(printWidth / srcW, printHeight / srcH);
-        const cropW = printWidth / scale;
-        const cropH = printHeight / scale;
-
-        const canvas = document.createElement('canvas');
-        canvas.width = printWidth;
-        canvas.height = printHeight;
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, printWidth, printHeight);
-        ctx.drawImage(imageElement, (srcW - cropW) / 2, (srcH - cropH) / 2, cropW, cropH, 0, 0, printWidth, printHeight);
-
-        const imgData = ctx.getImageData(0, 0, printWidth, printHeight);
-        const { packed, bytesPerRow } = this.ditherImageTo1Bit(imgData, printWidth, printHeight);
-
-        // Center Align for image
-        append([0x1B, 0x61, 0x01]);
-
-        // GS v 0 0 xL xH yL yH
-        const xL = bytesPerRow % 256;
-        const xH = Math.floor(bytesPerRow / 256);
-        const yL = printHeight % 256;
-        const yH = Math.floor(printHeight / 256);
-
-        append([0x1D, 0x76, 0x30, 0x00, xL, xH, yL, yH]);
-        append(Array.from(packed));
-        append([0x0A]); // line feed
+        this.appendRaster(append, this.renderThermal(imageElement, { maxHeight: 384 }));
       } catch (err) {
         console.warn('Bitmap generation failed:', err);
       }
@@ -273,12 +330,59 @@ class ThermalPrinterController {
     return new Uint8Array(commands);
   }
 
+  // Doodle Studio slip: header, the drawing at full paper width, title and artist
+  buildDrawingCommands({ artist, title, dateStr, source, gamma, method = 'bayer' }) {
+    const commands = [];
+    const append = (bytes) => { for (const b of bytes) commands.push(b); };
+    const appendText = (text) => {
+      const ascii = text.replace(/[^\x20-\x7E\n]/g, '');
+      append(Array.from(ascii, ch => ch.charCodeAt(0)));
+    };
+
+    append([0x1B, 0x40]);
+    append([0x1B, 0x61, 0x01]);
+    append([0x1D, 0x21, 0x11]);
+    appendText('DOODLE STUDIO\n');
+    append([0x1D, 0x21, 0x00]);
+    appendText('Sloka The School - Manikonda\n');
+    appendText('================================\n');
+
+    this.appendRaster(append, this.renderThermal(source, { maxHeight: 512, gamma, method }));
+
+    append([0x1B, 0x61, 0x01]);
+    if (title) {
+      append([0x1B, 0x45, 0x01]);
+      appendText(`"${title}"\n`);
+      append([0x1B, 0x45, 0x00]);
+    }
+    appendText(`by ${artist}\n`);
+    appendText(`${dateStr}\n`);
+    appendText('================================\n');
+    appendText('App by Joshitha (Grade 6B)\n');
+    append([0x1B, 0x64, 0x04]);
+    append([0x1D, 0x56, 0x42, 0x00]);
+    return new Uint8Array(commands);
+  }
+
+  async printDrawing(params, onProgress) {
+    if (window.soundEngine) window.soundEngine.playPrintSound();
+    if (!this.isConnected || !this.characteristic) return false;
+    try {
+      await this.sendDataInChunks(this.buildDrawingCommands(params), onProgress);
+      return true;
+    } catch (err) {
+      console.error('Drawing print failed:', err);
+      return false;
+    }
+  }
+
   // Send chunks to Bluetooth characteristic with flow control
-  async sendDataInChunks(data) {
+  async sendDataInChunks(data, onProgress) {
     if (!this.characteristic) throw new Error('Printer is not connected.');
 
     const CHUNK_SIZE = 64; // Safe size for BLE MTU
     for (let offset = 0; offset < data.length; offset += CHUNK_SIZE) {
+      if (onProgress && offset % (CHUNK_SIZE * 16) === 0) onProgress(offset / data.length);
       const chunk = data.slice(offset, offset + CHUNK_SIZE);
       if (this.characteristic.properties.writeWithoutResponse) {
         await this.characteristic.writeValueWithoutResponse(chunk);

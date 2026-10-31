@@ -26,6 +26,7 @@ jobs:
           node -c js/camera.js
           node -c js/printer.js
           node -c js/leaderboard.js
+          node -c js/studio.js
           node -c js/audio.js
           node -c js/confetti.js
           echo "All JavaScript files validated successfully!"

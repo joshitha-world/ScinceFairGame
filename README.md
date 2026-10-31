@@ -43,6 +43,17 @@ Every round is **60 seconds** (Riddle Time gets 90, since riddles need reading t
 
 After every answer a one-line explanation appears, so players learn even when they're wrong.
 
+## 🎨 Doodle Studio (draw & print)
+
+A creative mode with **no timer, score or level**: draw anything and print it on the POS-58 thermal printer.
+
+- **Tools:** pencil, brush, 🌈 rainbow brush, spray, paint-bucket fill, shapes (line, rectangle, circle, triangle, star, heart; outline or filled), emoji stickers, text, eraser — 12 colours + a custom colour picker, 4 sizes.
+- **Extras:** undo/redo (20 steps), 🪞 mirror mode for symmetrical drawings, and 📄 colouring pages (owl, rocket, house, flower, fish, butterfly, school logo). Colouring-page lines sit on their own layer, so the eraser never removes them.
+- **Print-ready canvas:** 3:4 portrait, printed at the full 58 mm paper width (384 × 512 dots). 👁️ **Print look** shows exactly what the black-only printer will produce.
+- **Print styles:** *Shaded colours* turns each colour into an even dot pattern (best for coloured-in pictures); *Bold lines* prints every mark solid black (best for line drawings and writing).
+- **Finish:** add the artist name and a title, then print, save as PNG, or print on a normal printer.
+- Touch-friendly: smooth strokes, stylus pressure, and a resting palm doesn't leave marks. Ctrl+Z / Ctrl+Y on a keyboard.
+
 ## 🎚️ Levels
 
 | Level | For | Points per correct answer |
@@ -96,5 +107,6 @@ All content lives in [`js/challenges.js`](js/challenges.js), grouped by game and
     ├── camera.js       # Webcam snapshot with cartoon fallback
     ├── confetti.js     # Confetti bursts
     ├── leaderboard.js  # localStorage scores, CSV export, server sync
-    └── printer.js      # Web Bluetooth POS-58 ESC/POS driver with dithering
+    ├── printer.js      # Web Bluetooth POS-58 ESC/POS driver: dithering, banded images, receipts & drawings
+    └── studio.js       # Doodle Studio: drawing tools, colouring pages, print preview
 ```

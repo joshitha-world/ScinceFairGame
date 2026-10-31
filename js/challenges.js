@@ -40,6 +40,10 @@ const CHALLENGES = {
   mix: {
     id: 'mix', title: 'Mega Mix', subject: 'A bit of everything', icon: '🎲', color: '#e3141c',
     howTo: 'Every question is a surprise from the other games. Stay sharp!'
+  },
+  // Creative mode, not a quiz: no level, timer, score or leaderboard
+  draw: {
+    id: 'draw', title: 'Doodle Studio', subject: 'Draw & print · No timer, just create!', icon: '🎨', color: '#0f766e', studio: true
   }
 };
 

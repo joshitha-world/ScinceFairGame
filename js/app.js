@@ -31,6 +31,7 @@ class EduFairApp {
     this.updateLeaderboardUI();
     this.soundIcon.textContent = window.soundEngine.isMuted() ? '🔇' : '🔊';
     this.setPhotoLeft(this.loadPhotoLeft());
+    this.studio = new DoodleStudio(this);
   }
 
   // Keepsake photo side: Android tablets (camera on the left in landscape) default to the
@@ -51,7 +52,7 @@ class EduFairApp {
     const $ = (id) => document.getElementById(id);
     this.$ = $;
 
-    this.screens = { home: $('screen-home'), game: $('screen-game'), results: $('screen-results') };
+    this.screens = { home: $('screen-home'), game: $('screen-game'), results: $('screen-results'), studio: $('screen-studio') };
     this.playerNameInput = $('player-name-input');
 
     // HUD
@@ -120,9 +121,11 @@ class EduFairApp {
   renderGameTiles() {
     const visible = Object.values(CHALLENGES).filter(c => !this.hiddenGames.includes(c.id));
     const grid = this.$('challenge-grid');
-    grid.dataset.count = visible.length;
+    // Doodle Studio is a full-width banner below the quiz tiles, so it doesn't count toward the grid
+    grid.dataset.count = visible.filter(c => !c.studio).length;
+    grid.classList.toggle('has-studio', visible.some(c => c.studio));
     grid.innerHTML = visible.map(c => `
-      <button class="game-tile" data-challenge="${c.id}" style="--c:${c.color}">
+      <button class="game-tile${c.studio ? ' studio-tile' : ''}" data-challenge="${c.id}" style="--c:${c.color}">
         <span class="game-icon">${c.icon}</span>
         <span class="game-text">
           <span class="game-subject">${c.subject}</span>
@@ -194,7 +197,7 @@ class EduFairApp {
   }
 
   buildLeaderboardTabs() {
-    const tabs = [{ id: 'all', label: 'All games' }, ...Object.values(CHALLENGES).map(c => ({ id: c.id, label: `${c.icon} ${c.title}` }))];
+    const tabs = [{ id: 'all', label: 'All games' }, ...Object.values(CHALLENGES).filter(c => !c.studio).map(c => ({ id: c.id, label: `${c.icon} ${c.title}` }))];
     this.$('leaderboard-tabs').innerHTML = tabs.map((t, i) =>
       `<button class="tab-btn${i === 0 ? ' active' : ''}" data-mode="${t.id}">${t.label}</button>`
     ).join('');
@@ -393,6 +396,8 @@ class EduFairApp {
   newPlayer() {
     this.playerName = '';
     this.playerNameInput.value = '';
+    this.studio.reset();
+    this.studio.$('studio-artist').value = '';
     this.showScreen('home');
   }
 
@@ -416,6 +421,10 @@ class EduFairApp {
   // Round flow
   // ---------------------------------------------------------------------------
   startChallenge(challengeId) {
+    if (CHALLENGES[challengeId].studio) {
+      this.studio.open();
+      return;
+    }
     this.challengeId = challengeId;
     const c = CHALLENGES[challengeId];
     const l = LEVELS[this.level];
