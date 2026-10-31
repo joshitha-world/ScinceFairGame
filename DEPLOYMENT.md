@@ -1,6 +1,6 @@
 # 🚀 Ubuntu Server & Kiosk Deployment Guide
 ### Edu Fair 2026 — SLOKA THE SCHOOL (Manikonda)
-**Project Created & Designed by: Joshitha, Grade 6C**
+**Project Created & Designed by: Joshitha, Grade 6B**
 
 ---
 
@@ -134,5 +134,5 @@ This application is built as an offline-first **Progressive Web App (PWA)** with
 
 - **School:** SLOKA THE SCHOOL, Manikonda (A Temple of Moral Education)
 - **Event:** Edu Fair 2026
-- **Student Developer & Designer:** **Joshitha, Grade 6C**
+- **Student Developer & Designer:** **Joshitha, Grade 6B**
 

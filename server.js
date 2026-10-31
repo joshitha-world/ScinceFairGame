@@ -130,7 +130,7 @@ function startServer(portToTry) {
   server.listen(portToTry, HOST, () => {
     console.log(`\n======================================================`);
     console.log(`🏫 SLOKA THE SCHOOL - Edu Fair 2026 Educational App`);
-    console.log(`🌟 Designed by: Joshitha, Grade 6C`);
+    console.log(`🌟 Designed by: Joshitha, Grade 6B`);
     console.log(`🚀 Server listening on: http://${HOST}:${portToTry}`);
     console.log(`🌐 Local access: http://localhost:${portToTry}`);
     console.log(`📷 Camera & 🖨️ Web Bluetooth supported on HTTPS & localhost!`);

@@ -195,7 +195,7 @@ class ThermalPrinterController {
     appendText('================================\n');
     append([0x1B, 0x45, 0x01]);
     appendText('PROJECT DESIGNED BY:\n');
-    appendText('JOSHITHA (GRADE 6C)\n');
+    appendText('JOSHITHA (GRADE 6B)\n');
     append([0x1B, 0x45, 0x00]);
     appendText('================================\n');
 
@@ -263,7 +263,7 @@ class ThermalPrinterController {
     appendText('SLOKA THE SCHOOL - MANIKONDA\n');
     appendText('EDU FAIR 2026 KEEPSAKE\n');
     append([0x1B, 0x45, 0x00]);
-    appendText('Designed by Joshitha (Grade 6C)\n');
+    appendText('Designed by Joshitha (Grade 6B)\n');
     appendText('Moral Education & Excellence\n');
 
     // Feed lines & Cut
