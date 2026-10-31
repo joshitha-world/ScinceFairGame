@@ -126,6 +126,7 @@ class ThermalPrinterController {
   ditherImageTo1Bit(imageData, width, height, gamma = 1, method = 'fs') {
     if (method === 'bayer') return this.orderedDither(imageData, width, height, gamma);
     if (method === 'bold') return this.boldThreshold(imageData, width, height);
+    if (method === 'sheet') return this.sheetDither(imageData, width, height, gamma);
     const data = imageData.data;
     const gray = new Float32Array(width * height);
 
@@ -173,6 +174,40 @@ class ThermalPrinterController {
         if (gamma !== 1) g = 255 * Math.pow(g / 255, gamma);
         const threshold = (BAYER8[(y % 8) * 8 + (x % 8)] + 0.5) * 4;
         bitmap[i] = g < threshold ? 1 : 0;
+      }
+    }
+    return this.packBitmap(bitmap, width, height);
+  }
+
+  // Worksheets and stickers: grey text and lines print crisp (threshold); coloured emoji
+  // pictures get a bold outline with light dot shading inside, like a colouring book
+  sheetDither(imageData, width, height, gamma) {
+    const d = imageData.data;
+    const total = width * height;
+    const lum = new Float32Array(total);
+    const colour = new Uint8Array(total);
+    for (let i = 0; i < total; i++) {
+      const p = i * 4;
+      lum[i] = 0.299 * d[p] + 0.587 * d[p + 1] + 0.114 * d[p + 2];
+      colour[i] = Math.max(d[p], d[p + 1], d[p + 2]) - Math.min(d[p], d[p + 1], d[p + 2]) >= 36 ? 1 : 0;
+    }
+    const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+    const isPaper = (x, y) => x < 0 || y < 0 || x >= width || y >= height || lum[y * width + x] >= 238;
+    const bitmap = new Uint8Array(total);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = y * width + x;
+        if (!colour[i]) {
+          bitmap[i] = lum[i] < 150 ? 1 : 0;
+          continue;
+        }
+        if (isPaper(x - 2, y) || isPaper(x + 2, y) || isPaper(x, y - 2) || isPaper(x, y + 2)
+          || isPaper(x - 1, y - 1) || isPaper(x + 1, y + 1) || isPaper(x + 1, y - 1) || isPaper(x - 1, y + 1)) {
+          bitmap[i] = 1;
+          continue;
+        }
+        const g = 255 * Math.pow(lum[i] / 255, gamma);
+        bitmap[i] = g < (BAYER4[(y % 4) * 4 + (x % 4)] + 0.5) * 16 ? 1 : 0;
       }
     }
     return this.packBitmap(bitmap, width, height);
@@ -372,6 +407,30 @@ class ThermalPrinterController {
       return true;
     } catch (err) {
       console.error('Drawing print failed:', err);
+      return false;
+    }
+  }
+
+  // Print a ready-made 384-dot-wide picture (Word Quest worksheets, stickers, learner cards)
+  buildImageCommands(source, { gamma = 1.15, method = 'sheet' } = {}) {
+    const commands = [];
+    const append = (bytes) => { for (const b of bytes) commands.push(b); };
+    append([0x1B, 0x40]);
+    const height = Math.round(384 * (source.height / source.width));
+    this.appendRaster(append, this.renderThermal(source, { maxHeight: height, gamma, method }));
+    append([0x1B, 0x64, 0x04]);
+    append([0x1D, 0x56, 0x42, 0x00]);
+    return new Uint8Array(commands);
+  }
+
+  async printImage(source, options, onProgress) {
+    if (window.soundEngine) window.soundEngine.playPrintSound();
+    if (!this.isConnected || !this.characteristic) return false;
+    try {
+      await this.sendDataInChunks(this.buildImageCommands(source, options), onProgress);
+      return true;
+    } catch (err) {
+      console.error('Image print failed:', err);
       return false;
     }
   }

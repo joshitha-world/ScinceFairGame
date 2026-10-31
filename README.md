@@ -54,6 +54,20 @@ A creative mode with **no timer, score or level**: draw anything and print it on
 - **Finish:** add the artist name and a title, then print, save as PNG, or print on a normal printer.
 - Touch-friendly: smooth strokes, stylus pressure, and a resting palm doesn't leave marks. Ctrl+Z / Ctrl+Y on a keyboard.
 
+## 📚 Word Quest (daily vocabulary)
+
+A personal learning journey for home or class, separate from the 60-second games.
+
+- **Monday–Friday:** one new word a day. Learn it (🔊 every word and sentence is read aloud), play 3 quick puzzles, then write your own sentence. Missed a day? Catch up any time that week.
+- **Print & solve:** every day prints a worksheet on the POS-58 with the day and date: the word, its meaning and puzzles to solve with a pencil, then stick it in a notebook. KG sheets have tracing and picture puzzles; older levels get a word search of the week's words, yesterday's word as review, synonyms, opposites and sentence lines (answers printed upside down).
+- **Weekend quiz:** 8–10 questions on the week's 5 words plus review words from earlier weeks. No timer. Finishing wins the week's sticker in 🥉 Bronze, 🥈 Silver (70%+) or 🥇 Gold (90%+); retrying keeps the best. Stickers print as round cut-outs for the notebook.
+- **Special stickers** for habits: first word, 5- and 10-day streaks, a perfect week, Gold, writing 5 sentences, printing 5 worksheets and more. The 🔥 streak counts school days only.
+- **Five levels:** 🐣 Tiny Words (KG: two- and three-letter words), 🌱 Word Sprouts (Grades 1–2), 🚀 Word Explorers (3–5), 🦉 Word Masters (6–8), 🧠 Word Champions (9+ and grown-ups). Each has 12 themed weeks (300 words in all); after week 12 the themes repeat so stickers can be upgraded.
+- **Learners and passkeys:** several learners can share one device. A learner can stay on the device only, or be **saved with a passkey** (fingerprint, face or screen lock; no password). Passkey learners sync to the server, so progress is safe and works on any device. Each passkey learner gets a one-time **backup code** that prints on a learner card, for signing in on a new device.
+- Open Word Quest straight away with **`/#quest`** (handy as a home-screen bookmark). Preview another day with `?wqdate=2026-11-07`.
+
+Passkeys need the real **https://** site or `http://localhost`; on a plain `http://192.168…` address learners can still use “Just this device”. Server data lives in `data/wordquest.json` (the Docker setup mounts `./data` so it survives rebuilds). Words are in [`js/wordquest-data.js`](js/wordquest-data.js); add weeks in the same format.
+
 ## 🎚️ Levels
 
 | Level | For | Points per correct answer |
@@ -98,6 +112,7 @@ All content lives in [`js/challenges.js`](js/challenges.js), grouped by game and
 ```text
 ├── index.html          # Screens: home, game, results; countdown & leaderboard overlays
 ├── server.js           # Zero-dependency Node static server + score sync API
+├── wordquest-server.js # Word Quest passkey (WebAuthn) sign-in and progress storage
 ├── sw.js               # Offline cache (bump CACHE_NAME on every release)
 ├── css/styles.css      # Tablet-first layout (portrait & landscape), school colours, print slip
 └── js/
@@ -108,5 +123,10 @@ All content lives in [`js/challenges.js`](js/challenges.js), grouped by game and
     ├── confetti.js     # Confetti bursts
     ├── leaderboard.js  # localStorage scores, CSV export, server sync
     ├── printer.js      # Web Bluetooth POS-58 ESC/POS driver: dithering, banded images, receipts & drawings
-    └── studio.js       # Doodle Studio: drawing tools, colouring pages, print preview
+    ├── studio.js       # Doodle Studio: drawing tools, colouring pages, print preview
+    ├── wordquest-data.js   # Word Quest levels, weekly themes, words and special stickers
+    ├── wordquest-merge.js  # Progress merging shared by browser and server
+    ├── wordquest-store.js  # Learners on the device, passkeys, server sync
+    ├── wordquest-print.js  # Worksheets, stickers and learner cards for the thermal printer
+    └── wordquest.js        # Word Quest screens: lesson, puzzles, quiz, sticker book
 ```

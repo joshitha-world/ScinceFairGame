@@ -43,7 +43,11 @@ const CHALLENGES = {
   },
   // Creative mode, not a quiz: no level, timer, score or leaderboard
   draw: {
-    id: 'draw', title: 'Doodle Studio', subject: 'Draw & print · No timer, just create!', icon: '🎨', color: '#0f766e', studio: true
+    id: 'draw', title: 'Doodle Studio', subject: 'Draw & print · No timer, just create!', icon: '🎨', color: '#0f766e', studio: true, wide: true
+  },
+  // Personal daily learning with its own levels, sign-in and sticker book
+  quest: {
+    id: 'quest', title: 'Word Quest', subject: 'A word a day · Weekend quiz · Stickers', icon: '📚', color: '#7c3aed', quest: true, wide: true
   }
 };
 

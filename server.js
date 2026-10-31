@@ -3,6 +3,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { handleWordQuest } = require('./wordquest-server.js');
 
 let PORT = parseInt(process.env.PORT, 10) || 3000;
 let HOST = process.env.HOST || '0.0.0.0';
@@ -40,14 +41,17 @@ ensureDataStorage();
 const server = http.createServer((req, res) => {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
     res.end();
     return;
   }
+
+  // Word Quest accounts & progress (passkey sign-in)
+  if (handleWordQuest(req, res)) return;
 
   // API Route: POST /api/sync-scores (Syncs scores from offline devices when online)
   if (req.url === '/api/sync-scores' && req.method === 'POST') {
@@ -95,8 +99,20 @@ const server = http.createServer((req, res) => {
     parsedUrl = '/index.html';
   }
 
-  const safePath = path.normalize(parsedUrl).replace(/^(\.\.[\/\\])+/, '');
+  let decodedUrl;
+  try { decodedUrl = decodeURIComponent(parsedUrl); } catch (e) { decodedUrl = parsedUrl; }
+  const safePath = path.normalize(decodedUrl).replace(/^(\.\.[\/\\])+/, '');
   const filePath = path.join(__dirname, safePath);
+
+  // Never serve the learner database, server code or hidden files (.git, .env…)
+  const parts = path.relative(__dirname, filePath).split(path.sep);
+  const blocked = parts[0] === '..' || parts[0] === 'data' || parts[0] === 'node_modules'
+    || parts.some(p => p.startsWith('.')) || /^(server|wordquest-server)\.js$/.test(parts[0]);
+  if (blocked) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('404 Not Found');
+    return;
+  }
 
   fs.stat(filePath, (err, stats) => {
     if (err || !stats.isFile()) {

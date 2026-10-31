@@ -10,4 +10,7 @@ services:
     environment:
       - PORT=3000
       - HOST=0.0.0.0
+    volumes:
+      # Keeps Word Quest learners and scores when the container is rebuilt
+      - ./data:/app/data
 

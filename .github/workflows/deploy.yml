@@ -27,6 +27,12 @@ jobs:
           node -c js/printer.js
           node -c js/leaderboard.js
           node -c js/studio.js
+          node -c js/wordquest-data.js
+          node -c js/wordquest-merge.js
+          node -c js/wordquest-store.js
+          node -c js/wordquest-print.js
+          node -c js/wordquest.js
+          node -c wordquest-server.js
           node -c js/audio.js
           node -c js/confetti.js
           echo "All JavaScript files validated successfully!"

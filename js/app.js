@@ -32,6 +32,8 @@ class EduFairApp {
     this.soundIcon.textContent = window.soundEngine.isMuted() ? '🔇' : '🔊';
     this.setPhotoLeft(this.loadPhotoLeft());
     this.studio = new DoodleStudio(this);
+    this.quest = new WordQuest(this);
+    if (location.hash === '#quest') this.quest.open();
   }
 
   // Keepsake photo side: Android tablets (camera on the left in landscape) default to the
@@ -52,7 +54,7 @@ class EduFairApp {
     const $ = (id) => document.getElementById(id);
     this.$ = $;
 
-    this.screens = { home: $('screen-home'), game: $('screen-game'), results: $('screen-results'), studio: $('screen-studio') };
+    this.screens = { home: $('screen-home'), game: $('screen-game'), results: $('screen-results'), studio: $('screen-studio'), quest: $('screen-quest') };
     this.playerNameInput = $('player-name-input');
 
     // HUD
@@ -121,11 +123,10 @@ class EduFairApp {
   renderGameTiles() {
     const visible = Object.values(CHALLENGES).filter(c => !this.hiddenGames.includes(c.id));
     const grid = this.$('challenge-grid');
-    // Doodle Studio is a full-width banner below the quiz tiles, so it doesn't count toward the grid
-    grid.dataset.count = visible.filter(c => !c.studio).length;
-    grid.classList.toggle('has-studio', visible.some(c => c.studio));
-    grid.innerHTML = visible.map(c => `
-      <button class="game-tile${c.studio ? ' studio-tile' : ''}" data-challenge="${c.id}" style="--c:${c.color}">
+    const wide = this.$('wide-row');
+    // Doodle Studio and Word Quest are wide banners in their own row below the quiz tiles
+    const tile = c => `
+      <button class="game-tile${c.studio ? ' studio-tile' : ''}${c.quest ? ' quest-tile' : ''}" data-challenge="${c.id}" style="--c:${c.color}">
         <span class="game-icon">${c.icon}</span>
         <span class="game-text">
           <span class="game-subject">${c.subject}</span>
@@ -134,7 +135,13 @@ class EduFairApp {
         <span class="game-play">▶</span>
         ${c.seconds ? `<span class="game-time">⏱️ ${c.seconds}s</span>` : ''}
       </button>
-    `).join('');
+    `;
+    const quizzes = visible.filter(c => !c.wide);
+    grid.dataset.count = quizzes.length;
+    grid.hidden = !quizzes.length;
+    grid.innerHTML = quizzes.map(tile).join('');
+    wide.hidden = quizzes.length === visible.length;
+    wide.innerHTML = visible.filter(c => c.wide).map(tile).join('');
   }
 
   // ---------------------------------------------------------------------------
@@ -197,7 +204,7 @@ class EduFairApp {
   }
 
   buildLeaderboardTabs() {
-    const tabs = [{ id: 'all', label: 'All games' }, ...Object.values(CHALLENGES).filter(c => !c.studio).map(c => ({ id: c.id, label: `${c.icon} ${c.title}` }))];
+    const tabs = [{ id: 'all', label: 'All games' }, ...Object.values(CHALLENGES).filter(c => !c.wide).map(c => ({ id: c.id, label: `${c.icon} ${c.title}` }))];
     this.$('leaderboard-tabs').innerHTML = tabs.map((t, i) =>
       `<button class="tab-btn${i === 0 ? ' active' : ''}" data-mode="${t.id}">${t.label}</button>`
     ).join('');
@@ -222,12 +229,14 @@ class EduFairApp {
       this.setLevel(btn.dataset.level);
     });
 
-    $('challenge-grid').addEventListener('click', (e) => {
+    const onTile = (e) => {
       const tile = e.target.closest('.game-tile');
       if (!tile) return;
       window.soundEngine.playClick();
       this.startChallenge(tile.dataset.challenge);
-    });
+    };
+    $('challenge-grid').addEventListener('click', onTile);
+    $('wide-row').addEventListener('click', onTile);
 
     // Header
     $('btn-sound-toggle').addEventListener('click', () => {
@@ -423,6 +432,10 @@ class EduFairApp {
   startChallenge(challengeId) {
     if (CHALLENGES[challengeId].studio) {
       this.studio.open();
+      return;
+    }
+    if (CHALLENGES[challengeId].quest) {
+      this.quest.open();
       return;
     }
     this.challengeId = challengeId;

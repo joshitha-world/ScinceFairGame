@@ -4,3 +4,5 @@ node_modules
 .system_generated
 *.log
 
+data/wordquest.json
+data/*.tmp
