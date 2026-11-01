@@ -34,6 +34,7 @@ class EduFairApp {
     this.studio = new DoodleStudio(this);
     this.quest = new WordQuest(this);
     this.robo = new RoboAcademy(this);
+    this.renderHome();
     if (location.hash === '#quest') this.quest.open();
     if (location.hash === '#robo') this.robo.open();
   }
@@ -56,7 +57,7 @@ class EduFairApp {
     const $ = (id) => document.getElementById(id);
     this.$ = $;
 
-    this.screens = { home: $('screen-home'), game: $('screen-game'), results: $('screen-results'), studio: $('screen-studio'), quest: $('screen-quest'), robo: $('screen-robo') };
+    this.screens = { home: $('screen-home'), game: $('screen-game'), results: $('screen-results'), studio: $('screen-studio'), quest: $('screen-quest'), robo: $('screen-robo'), arcade: $('screen-arcade') };
     this.playerNameInput = $('player-name-input');
 
     // HUD
@@ -122,13 +123,13 @@ class EduFairApp {
     this.renderGameTiles();
   }
 
+  // The 60-Second Challenge screen shows only the quiz games; the others are home-page features
   renderGameTiles() {
-    const visible = Object.values(CHALLENGES).filter(c => !this.hiddenGames.includes(c.id));
+    const quizzes = Object.values(CHALLENGES).filter(c => !c.wide && !this.hiddenGames.includes(c.id));
     const grid = this.$('challenge-grid');
-    const wide = this.$('wide-row');
-    // Doodle Studio and Word Quest are wide banners in their own row below the quiz tiles
-    const tile = c => `
-      <button class="game-tile${c.studio ? ' studio-tile' : ''}${c.quest ? ' quest-tile' : ''}${c.robo ? ' robo-tile' : ''}" data-challenge="${c.id}" style="--c:${c.color}">
+    grid.dataset.count = quizzes.length;
+    grid.innerHTML = quizzes.map(c => `
+      <button class="game-tile" data-challenge="${c.id}" style="--c:${c.color}">
         <span class="game-icon">${c.icon}</span>
         <span class="game-text">
           <span class="game-subject">${c.subject}</span>
@@ -137,14 +138,97 @@ class EduFairApp {
         <span class="game-play">▶</span>
         ${c.seconds ? `<span class="game-time">⏱️ ${c.seconds}s</span>` : ''}
       </button>
-    `;
-    const quizzes = visible.filter(c => !c.wide);
-    grid.dataset.count = quizzes.length;
-    grid.hidden = !quizzes.length;
-    grid.innerHTML = quizzes.map(tile).join('');
-    wide.hidden = quizzes.length === visible.length;
-    wide.innerHTML = visible.filter(c => c.wide).map(tile).join('');
+    `).join('');
+    this.renderHome();
   }
+
+  // Open a feature from the landing page
+  goTo(where) {
+    if (where === 'quest') return this.quest.open();
+    if (where === 'robo') return this.robo.open();
+    if (where === 'studio') return this.studio.open();
+    if (where === 'arcade') return this.showScreen('arcade');
+    return null;
+  }
+
+  featureCard({ go, cls, icon, kicker, title, desc, chips, progress, cta }) {
+    return `
+      <button class="feature-card ${cls}" data-go="${go}">
+        <span class="fc-icon">${icon}</span>
+        <span class="fc-body">
+          <span class="fc-kicker">${kicker}</span>
+          <span class="fc-title">${title}</span>
+          <span class="fc-desc">${desc}</span>
+          <span class="fc-chips">${chips.map(c => `<i>${c}</i>`).join('')}</span>
+          ${progress ? `<span class="fc-progress">${progress}</span>` : ''}
+        </span>
+        <span class="fc-go">${cta} →</span>
+      </button>`;
+  }
+
+  // Landing page: feature cards with the current learner's progress, and the hero "continue" chip
+  renderHome() {
+    if (!this.quest || !this.robo) return;
+    const shown = (id) => !this.hiddenGames.includes(id);
+    const store = this.quest.store;
+    const learner = store.current;
+    const today = this.quest.todayKey();
+    const wq = learner ? wqStats(store.progress, today) : null;
+    const ra = learner ? this.robo.stats() : null;
+    const name = learner ? escapeHtml(learner.name) : '';
+    const avatar = learner ? escapeHtml(learner.avatar) : '';
+
+    const learn = [];
+    if (shown('quest')) {
+      learn.push(this.featureCard({
+        go: 'quest', cls: 'fc-quest', icon: '📚', kicker: 'Daily vocabulary · KG to grown-ups', title: 'Word Quest',
+        desc: 'A new word every school day with 3 quick puzzles, a printable worksheet, and a weekend quiz to win stickers.',
+        chips: ['🖨️ Daily worksheet', '🏅 Collect stickers', '🔊 Hear every word'],
+        progress: learner ? `${avatar} ${name} · 📚 ${wq.words} words · 🔥 ${wq.streak} day streak · 🏅 ${wq.stickers}` : '',
+        cta: learner && wq.words ? 'Continue' : 'Start'
+      }));
+    }
+    if (shown('robo')) {
+      learn.push(this.featureCard({
+        go: 'robo', cls: 'fc-robo', icon: '🤖', kicker: 'Electronics → Robotics → AI', title: 'Robo Academy',
+        desc: '120 daily lessons from your first LED to an AI robot with its own web app. Hands-on missions and weekly tests for passport stamps.',
+        chips: ['🔧 Real builds', '🎬 Video links', '🛂 24 stamps'],
+        progress: learner ? `${avatar} ${name} · Day ${Math.min(ra.lessons + 1, RA_LESSONS.length)} of ${RA_LESSONS.length} · ⭐ ${ra.xp} XP · 🛂 ${ra.stamps}` : '',
+        cta: learner && ra.lessons ? 'Continue' : 'Start'
+      }));
+    }
+    this.$('home-learn').innerHTML = learn.join('');
+    this.$('home-learn').closest('.home-section').hidden = !learn.length;
+
+    const play = [];
+    const quizzes = PLAYABLE_CHALLENGES.filter(shown);
+    if (quizzes.length || shown('mix')) {
+      const top = window.leaderboardManager.getScores('all', 3);
+      play.push(this.featureCard({
+        go: 'arcade', cls: 'fc-arcade', icon: '⏱️', kicker: `${quizzes.length + (shown('mix') ? 1 : 0)} quiz games · 4 levels`, title: 'The 60-Second Challenge',
+        desc: 'Beat the clock in science, maths, English, riddles and more. Print a keepsake with your photo and score!',
+        chips: [...quizzes, ...(shown('mix') ? ['mix'] : [])].map(id => CHALLENGES[id].icon),
+        progress: top.length ? `🏆 ${top.map(t => `${escapeHtml(t.name)} ${t.score}`).join(' · ')}` : '',
+        cta: 'Play'
+      }));
+    }
+    if (shown('draw')) {
+      play.push(this.featureCard({
+        go: 'studio', cls: 'fc-studio', icon: '🎨', kicker: 'Draw · colour · print', title: 'Doodle Studio',
+        desc: 'Brushes, rainbow pens, stickers, shapes and colouring pages. No timer, just create, then print your masterpiece.',
+        chips: ['🖌️ 9 tools', '📄 Colouring pages', '🖨️ Print it'],
+        progress: '',
+        cta: 'Draw'
+      }));
+    }
+    this.$('home-play').innerHTML = play.join('');
+    this.$('home-play').closest('.home-section').hidden = !play.length;
+
+    this.$('hero-learner').innerHTML = learner
+      ? `<button class="hero-chip" data-go="${shown('quest') ? 'quest' : 'robo'}"><span>${avatar}</span>Welcome back, <b>${name}</b>! Pick up where you left off →</button>`
+      : `<button class="hero-chip" data-go="${shown('quest') ? 'quest' : 'robo'}"><span>✨</span>New here? Make your free learner card →</button>`;
+  }
+
 
   // ---------------------------------------------------------------------------
   // Settings: which games appear on the home screen
@@ -238,7 +322,14 @@ class EduFairApp {
       this.startChallenge(tile.dataset.challenge);
     };
     $('challenge-grid').addEventListener('click', onTile);
-    $('wide-row').addEventListener('click', onTile);
+    $('arcade-back').addEventListener('click', () => this.showScreen('home'));
+    // Landing page: feature cards and hero buttons
+    $('screen-home').addEventListener('click', (e) => {
+      const go = e.target.closest('[data-go]');
+      if (!go) return;
+      window.soundEngine.playClick();
+      this.goTo(go.dataset.go);
+    });
 
     // Header
     $('btn-sound-toggle').addEventListener('click', () => {
@@ -301,7 +392,7 @@ class EduFairApp {
     });
 
     // Game
-    $('btn-quit').addEventListener('click', () => this.confirmLeaveRound() && this.showScreen('home'));
+    $('btn-quit').addEventListener('click', () => this.confirmLeaveRound() && this.showScreen('arcade'));
     $('btn-next').addEventListener('click', () => this.nextQuestion());
     this.feedbackText.addEventListener('click', (e) => {
       if (e.target.closest('#btn-hint')) this.useHint();
@@ -313,7 +404,7 @@ class EduFairApp {
 
     // Results
     $('btn-results-play-again').addEventListener('click', () => this.startChallenge(this.challengeId));
-    $('btn-results-home').addEventListener('click', () => this.showScreen('home'));
+    $('btn-results-home').addEventListener('click', () => this.showScreen('arcade'));
     $('btn-results-new-player').addEventListener('click', () => this.newPlayer());
     $('btn-take-selfie').addEventListener('click', () => this.snapWebcamPhoto());
     $('btn-retake-photo').addEventListener('click', () => this.startLiveWebcam());
@@ -396,7 +487,8 @@ class EduFairApp {
       window.cameraController.stopCamera();
       clearTimeout(this.idleTimer);
     }
-    if (screenName === 'home') this.updateLeaderboardUI();
+    if (screenName === 'arcade') this.updateLeaderboardUI();
+    if (screenName === 'home') this.renderHome();
 
     Object.keys(this.screens).forEach(key => {
       this.screens[key].classList.toggle('active', key === screenName);
@@ -409,7 +501,7 @@ class EduFairApp {
     this.playerNameInput.value = '';
     this.studio.reset();
     this.studio.$('studio-artist').value = '';
-    this.showScreen('home');
+    this.showScreen('arcade');
   }
 
   toggleFullscreen() {
@@ -738,7 +830,7 @@ class EduFairApp {
     const l = LEVELS[this.level];
     const stars = this.calculateStars(r.correct);
     r.stars = stars;
-    const displayName = this.playerName || 'Sloka Star';
+    const displayName = this.playerName || 'Little Genius';
     const accuracy = r.answered > 0 ? Math.round((r.correct / r.answered) * 100) : 0;
     const rankTitle = RANK_TITLES[stars];
 
@@ -843,7 +935,7 @@ class EduFairApp {
 
     const c = CHALLENGES[this.challengeId];
     const ok = await window.printerController.printReceipt({
-      playerName: this.playerName || 'Sloka Star',
+      playerName: this.playerName || 'Little Genius',
       modeTitle: c.title.toUpperCase(),
       levelLabel: LEVELS[this.level].label.toUpperCase(),
       score: this.round.score,

@@ -312,11 +312,10 @@ class ThermalPrinterController {
 
     // Header: Double size
     append([0x1D, 0x21, 0x11]); // 2x width, 2x height
-    appendText('SLOKA THE SCHOOL\n');
+    appendText('LITTLE GENIUS LAND\n');
     append([0x1D, 0x21, 0x00]); // Normal size
-    appendText('EDU FAIR 2026\n');
-    appendText('A Temple of Moral Education\n');
-    appendText('Manikonda, Hyderabad\n');
+    appendText('60-SECOND CHALLENGE\n');
+    appendText('Learn - Play - Create - Print\n');
     appendText('================================\n');
     append([0x1B, 0x45, 0x01]);
     appendText('PROJECT DESIGNED BY:\n');
@@ -352,8 +351,8 @@ class ThermalPrinterController {
     append([0x1B, 0x61, 0x01]);
     appendText('================================\n');
     append([0x1B, 0x45, 0x01]);
-    appendText('SLOKA THE SCHOOL - MANIKONDA\n');
-    appendText('EDU FAIR 2026 KEEPSAKE\n');
+    appendText('LITTLE GENIUS LAND\n');
+    appendText('KEEPSAKE\n');
     append([0x1B, 0x45, 0x00]);
     appendText('Designed by Joshitha (Grade 6B)\n');
     appendText('Moral Education & Excellence\n');
@@ -379,7 +378,7 @@ class ThermalPrinterController {
     append([0x1D, 0x21, 0x11]);
     appendText('DOODLE STUDIO\n');
     append([0x1D, 0x21, 0x00]);
-    appendText('Sloka The School - Manikonda\n');
+    appendText('Little Genius Land\n');
     appendText('================================\n');
 
     this.appendRaster(append, this.renderThermal(source, { maxHeight: 512, gamma, method }));

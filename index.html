@@ -3,16 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Edu Fair 2026 - Sloka The School | 60-Second Challenge</title>
+  <title>Little Genius Land | Learn · Play · Create · Print</title>
   <link rel="stylesheet" href="css/styles.css">
-  <link rel="icon" href="assets/logo.jpg">
+  <link rel="icon" href="assets/icon-192.png">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
   <!-- PWA Manifest & Mobile Web App Meta -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#ffc800">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="EduFair 2026">
+  <meta name="apple-mobile-web-app-title" content="Little Genius">
 </head>
 <body>
   <div class="app">
@@ -20,10 +21,10 @@
     <!-- App Header -->
     <header class="topbar">
       <button class="brand" id="btn-brand-home" title="Home">
-        <img src="assets/logo.jpg" alt="Sloka The School Logo" class="brand-logo">
+        <img src="assets/little-genius-land.jpg" alt="Little Genius Land logo" class="brand-logo">
         <span class="brand-text">
-          <strong>SLOKA THE SCHOOL</strong>
-          <small>Edu Fair 2026 · Manikonda</small>
+          <strong>Little Genius Land</strong>
+          <small>Learn · Play · Create · Print</small>
         </span>
       </button>
 
@@ -36,7 +37,6 @@
           <span class="printer-status-dot" id="header-printer-dot"></span>
           <span id="header-printer-text">🖨️</span>
         </button>
-        <button class="icon-btn" id="btn-open-leaderboard" title="Top scores">🏆<span class="icon-btn-label">Top Scores</span></button>
         <button class="icon-btn" id="btn-sound-toggle" title="Sound on/off"><span id="sound-icon">🔊</span></button>
         <button class="icon-btn" id="btn-settings" title="Settings: choose games">⚙️</button>
         <button class="icon-btn" id="btn-fullscreen" title="Full screen">⛶</button>
@@ -45,13 +45,120 @@
 
     <main class="stage">
 
-      <!-- ================= SCREEN 1: HOME ================= -->
+      <!-- ================= SCREEN 1: HOME (landing page) ================= -->
       <section id="screen-home" class="screen active">
-        <div class="home-hero">
-          <h1 class="hero-title">The <span>60-Second</span> Challenge</h1>
-          <p class="hero-sub">Pick your level, choose a game and beat the clock!</p>
-        </div>
 
+        <!-- Hero -->
+        <section class="hero">
+          <div class="hero-bubbles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="hero-copy">
+            <span class="hero-kicker">✨ Learn · Play · Create · Print</span>
+            <h1 class="hero-title">Welcome to <span class="hero-brand">Little Genius Land</span></h1>
+            <p class="hero-rotator">A happy place to
+              <span class="rot">
+                <b>learn a new word every day</b>
+                <b>build real robots</b>
+                <b>draw &amp; print your art</b>
+                <b>beat the 60-second clock</b>
+                <b>collect stickers &amp; stamps</b>
+              </span>
+            </p>
+            <p class="hero-sub">Daily lessons, quick quiz games and creative tools for curious kids, with worksheets, stickers and stamps you can print and keep.</p>
+            <div class="hero-ctas">
+              <button class="btn btn-primary btn-big" data-go="quest">📚 Today's word</button>
+              <button class="btn btn-dark btn-big" data-go="robo">🤖 Robo Academy</button>
+              <button class="btn btn-ghost btn-big" data-go="arcade">⏱️ Quick games</button>
+            </div>
+            <div class="hero-learner" id="hero-learner"><!-- "continue" chip --></div>
+          </div>
+
+          <div class="hero-art" aria-hidden="true">
+            <div class="hero-orbit">
+              <span style="--a:0deg">⭐</span><span style="--a:60deg">⚡</span><span style="--a:120deg">🎨</span>
+              <span style="--a:180deg">🔤</span><span style="--a:240deg">🧠</span><span style="--a:300deg">🏆</span>
+            </div>
+            <img class="hero-logo" src="assets/little-genius-land.jpg" alt="">
+            <div class="printer">
+              <div class="printer-out">
+                <div class="slip slip-1">
+                  <div class="slip-bar">WORD QUEST <b>DAY 3</b></div>
+                  <div class="slip-pic">🐱</div>
+                  <div class="slip-word">cat</div>
+                  <div class="slip-trace">c a t</div>
+                  <div class="slip-lines"><i></i><i></i></div>
+                  <div class="slip-stars">☆ ☆ ☆</div>
+                </div>
+                <div class="slip slip-2">
+                  <div class="slip-sticker"><span>🦁</span><small>BRAVE HEARTS</small><b>★★★</b></div>
+                  <div class="slip-cap">Gold sticker!</div>
+                </div>
+                <div class="slip slip-3">
+                  <div class="slip-bar">ROBO ACADEMY <b>DAY 7</b></div>
+                  <div class="slip-pic">💡</div>
+                  <div class="slip-word small">The LED</div>
+                  <div class="slip-check">☑ long leg = +<br>☑ add a resistor</div>
+                  <div class="slip-qr"></div>
+                </div>
+              </div>
+              <div class="printer-body">
+                <div class="printer-slot"></div>
+                <span class="printer-led"></span>
+                <span class="printer-label">GENIUS PRINT</span>
+              </div>
+            </div>
+            <div class="hero-robot">🤖</div>
+            <div class="hero-pencil">✏️</div>
+          </div>
+        </section>
+
+        <!-- Learn every day -->
+        <section class="home-section">
+          <div class="section-head">
+            <h2>📅 Learn something new every day</h2>
+            <p>Short daily lessons that build a habit, with a printable sheet for your notebook.</p>
+          </div>
+          <div class="feature-grid" id="home-learn"><!-- built in JS --></div>
+        </section>
+
+        <!-- Play & create -->
+        <section class="home-section">
+          <div class="section-head">
+            <h2>🎮 Play &amp; create</h2>
+            <p>Race the clock with friends, or make something beautiful and print it.</p>
+          </div>
+          <div class="feature-grid" id="home-play"><!-- built in JS --></div>
+        </section>
+
+        <!-- How it works -->
+        <section class="home-section">
+          <div class="section-head"><h2>🖨️ Learn it, print it, keep it</h2></div>
+          <div class="how-steps">
+            <div class="how-step"><span class="how-icon">📖</span><b>1. Learn</b><small>A word, a circuit or a game, a few minutes a day</small></div>
+            <div class="how-arrow">➜</div>
+            <div class="how-step"><span class="how-icon how-print">🖨️<i></i></span><b>2. Print</b><small>Worksheets and lab sheets on a pocket thermal printer</small></div>
+            <div class="how-arrow">➜</div>
+            <div class="how-step"><span class="how-icon">✏️</span><b>3. Solve</b><small>Finish the puzzles with a pencil and colour the stars</small></div>
+            <div class="how-arrow">➜</div>
+            <div class="how-step"><span class="how-icon">🏅</span><b>4. Collect</b><small>Stickers and stamps for your notebook every week</small></div>
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <img src="assets/little-genius-land.jpg" alt="">
+          <div>
+            <strong>Little Genius Land</strong>
+            <small>🌟 Created &amp; designed by <b>Joshitha, Grade 6B</b> · Sloka The School · Built with the help of Claude</small>
+          </div>
+        </footer>
+      </section>
+
+      <!-- ================= SCREEN 1b: 60-SECOND CHALLENGE (quiz games) ================= -->
+      <section id="screen-arcade" class="screen">
+        <div class="wq-bar">
+          <button class="hud-quit" id="arcade-back" title="Back">←</button>
+          <div class="studio-name wq-title arcade-title"><span class="hud-icon">⏱️</span><strong>The <span>60-Second</span> Challenge</strong></div>
+          <button class="icon-btn" id="btn-open-leaderboard" title="Top scores">🏆<span class="icon-btn-label">Top Scores</span></button>
+        </div>
         <div class="home-setup">
           <label class="step-card name-card" for="player-name-input">
             <span class="step-num">1</span>
@@ -69,7 +176,6 @@
 
         <div class="step-head games-head"><span class="step-num">3</span><span class="step-label">Tap a game to start</span></div>
         <div class="challenge-grid" id="challenge-grid"><!-- built in JS --></div>
-        <div class="wide-row" id="wide-row"><!-- Doodle Studio & Word Quest banners --></div>
 
         <footer class="home-footer">
           <div class="mini-board">
@@ -77,7 +183,6 @@
             <div class="mini-leaderboard-list"></div>
             <button class="link-btn" id="btn-view-all-scores">See all →</button>
           </div>
-          <div class="credit">🌟 Created &amp; designed by <strong>Joshitha, Grade 6B</strong></div>
         </footer>
       </section>
 
@@ -168,10 +273,10 @@
           <div class="receipt-card">
             <div class="receipt-scroll">
               <div class="thermal-receipt-paper" id="thermal-receipt">
-                <img src="assets/logo.jpg" alt="Sloka Logo" class="receipt-logo">
-                <div class="receipt-center receipt-title">SLOKA THE SCHOOL</div>
-                <div class="receipt-center receipt-strong">EDU FAIR 2026</div>
-                <div class="receipt-center receipt-small">A Temple of Moral Education • Manikonda</div>
+                <img src="assets/little-genius-land.jpg" alt="Little Genius Land logo" class="receipt-logo">
+                <div class="receipt-center receipt-title">LITTLE GENIUS LAND</div>
+                <div class="receipt-center receipt-strong">60-SECOND CHALLENGE</div>
+                <div class="receipt-center receipt-small">Learn · Play · Create · Print</div>
                 <div class="receipt-line"></div>
                 <div class="receipt-row"><span>NAME</span><strong id="receipt-player-name">PLAYER</strong></div>
                 <div class="receipt-row"><span>GAME</span><span id="receipt-mode-name">-</span></div>
@@ -269,7 +374,7 @@
   <div class="modal-overlay" id="modal-leaderboard">
     <div class="modal-box">
       <div class="modal-header">
-        <h3>🏆 Edu Fair 2026 Hall of Fame</h3>
+        <h3>🏆 Hall of Fame</h3>
         <button class="close-modal-btn" id="btn-close-leaderboard">&times;</button>
       </div>
       <div class="leaderboard-tabs" id="leaderboard-tabs"><!-- built in JS --></div>
@@ -340,7 +445,7 @@
   <!-- Slip used only when printing a drawing on a normal printer -->
   <div class="drawing-slip" id="drawing-slip">
     <div class="receipt-center receipt-title">DOODLE STUDIO</div>
-    <div class="receipt-center receipt-small">Sloka The School • Manikonda</div>
+    <div class="receipt-center receipt-small">Little Genius Land</div>
     <img id="drawing-slip-img" alt="Drawing">
     <div class="receipt-center receipt-strong" id="drawing-slip-title"></div>
     <div class="receipt-center" id="drawing-slip-artist"></div>

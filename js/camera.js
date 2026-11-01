@@ -127,7 +127,7 @@ class CameraController {
       ctx.fillStyle = '#94a3b8';
       ctx.font = `bold ${Math.round(S * 0.035)}px monospace`;
       ctx.textAlign = 'center';
-      ctx.fillText('[ SLOKA STAR ]', S / 2, S * 0.95);
+      ctx.fillText('[ LITTLE GENIUS ]', S / 2, S * 0.95);
     }
 
     this.capturedPhotoDataUrl = canvas.toDataURL('image/jpeg', 0.9);

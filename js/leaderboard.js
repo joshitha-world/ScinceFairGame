@@ -43,7 +43,7 @@ class LeaderboardManager {
   }
 
   addScore({ name, mode, level, score, stars, accuracy, correct }) {
-    const cleanName = (name && name.trim()) ? name.trim() : 'Sloka Star';
+    const cleanName = (name && name.trim()) ? name.trim() : 'Little Genius';
     const entry = {
       id: 'sloka_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
       name: cleanName,
@@ -135,7 +135,7 @@ class LeaderboardManager {
 
     const link = document.createElement("a");
     link.setAttribute("href", 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent));
-    link.setAttribute("download", `Sloka_EduFair_2026_Scores_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `LittleGeniusLand_Scores_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

@@ -797,7 +797,7 @@ class DoodleStudio {
   }
 
   artistName() {
-    return this.$('studio-artist').value.trim() || 'A Sloka Star';
+    return this.$('studio-artist').value.trim() || 'A Little Genius';
   }
 
   async printDrawing() {

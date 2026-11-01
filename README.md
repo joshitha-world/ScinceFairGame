@@ -1,4 +1,10 @@
-# ⏱️ Edu Fair 2026 — The 60-Second Challenge
+# 🌟 Little Genius Land
+
+Learn · Play · Create · Print. A learning app for curious kids: **Word Quest** (a word a day), **Robo Academy** (electronics → robotics → AI), **Doodle Studio**, and **The 60-Second Challenge** quiz games, with worksheets, stickers and stamps printed on a pocket thermal printer. Created & designed by Joshitha, Grade 6B.
+
+The home page is a scrolling landing page with an animated hero (a printer printing worksheets, stickers and lab sheets), feature cards showing the current learner's progress, and a "Learn it, print it, keep it" guide. The eight quiz games live on their own **60-Second Challenge** screen.
+
+## ⏱️ The 60-Second Challenge (originally built for Edu Fair 2026)
 
 A quick, fun quiz kiosk for the Sloka The School Edu Fair 2026 booth. Five one-tap games, four difficulty levels, so everyone from Grade 1 students to parents and teachers can play. Built to fill a 10" Android tablet in portrait or landscape, fully offline.
 
