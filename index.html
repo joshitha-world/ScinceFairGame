@@ -356,6 +356,30 @@
         </div>
         <div class="wq-view" id="ra-view"><!-- built in JS --></div>
       </section>
+      <!-- ================= SCREEN 7: STICKER MAKER ================= -->
+      <section id="screen-stickers" class="screen">
+        <div class="studio-bar" id="sm-bar">
+          <button class="hud-quit" id="sm-back" title="Back">←</button>
+          <div class="studio-name sm-title"><span class="hud-icon">🏷️</span><strong>Sticker Maker</strong></div>
+          <div class="studio-actions">
+            <button class="bar-btn" id="sm-undo" data-sm="undo" title="Undo">↶<small>Undo</small></button>
+            <button class="bar-btn" id="sm-redo" data-sm="redo" title="Redo">↷<small>Redo</small></button>
+            <button class="bar-btn" id="sm-look" data-sm="look" title="See how it will print">👁️<small>Print look</small></button>
+            <button class="bar-btn" data-sm="gallery" title="My saved stickers">📁<small>My stickers</small></button>
+            <button class="bar-btn" data-sm="save" title="Save this design">💾<small>Save</small></button>
+            <button class="btn btn-primary studio-done" data-sm="print">🖨️ Print</button>
+          </div>
+        </div>
+        <div class="sm-main">
+          <div class="sm-stage" id="sm-stage">
+            <div class="sm-paper"><canvas id="sm-canvas"></canvas></div>
+            <div class="sm-size-label" id="sm-size-label"></div>
+          </div>
+          <div class="sm-panel" id="sm-panel"><!-- built in JS --></div>
+        </div>
+        <input type="file" id="sm-file" accept="image/*" hidden>
+        <input type="file" id="sm-camera" accept="image/*" capture="environment" hidden>
+      </section>
     </main>
   </div>
 
@@ -508,6 +532,8 @@
   <script src="js/qr.js"></script>
   <script src="js/robo-data.js"></script>
   <script src="js/robo.js"></script>
+  <script src="js/stickers-data.js"></script>
+  <script src="js/stickers.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

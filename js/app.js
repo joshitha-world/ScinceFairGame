@@ -34,9 +34,11 @@ class EduFairApp {
     this.studio = new DoodleStudio(this);
     this.quest = new WordQuest(this);
     this.robo = new RoboAcademy(this);
+    this.stickers = new StickerMaker(this);
     this.renderHome();
     if (location.hash === '#quest') this.quest.open();
     if (location.hash === '#robo') this.robo.open();
+    if (location.hash === '#stickers') this.stickers.open();
   }
 
   // Keepsake photo side: Android tablets (camera on the left in landscape) default to the
@@ -57,7 +59,7 @@ class EduFairApp {
     const $ = (id) => document.getElementById(id);
     this.$ = $;
 
-    this.screens = { home: $('screen-home'), game: $('screen-game'), results: $('screen-results'), studio: $('screen-studio'), quest: $('screen-quest'), robo: $('screen-robo'), arcade: $('screen-arcade') };
+    this.screens = { home: $('screen-home'), game: $('screen-game'), results: $('screen-results'), studio: $('screen-studio'), quest: $('screen-quest'), robo: $('screen-robo'), arcade: $('screen-arcade'), stickers: $('screen-stickers') };
     this.playerNameInput = $('player-name-input');
 
     // HUD
@@ -147,6 +149,7 @@ class EduFairApp {
     if (where === 'quest') return this.quest.open();
     if (where === 'robo') return this.robo.open();
     if (where === 'studio') return this.studio.open();
+    if (where === 'stickers') return this.stickers.open();
     if (where === 'arcade') return this.showScreen('arcade');
     return null;
   }
@@ -219,6 +222,15 @@ class EduFairApp {
         chips: ['🖌️ 9 tools', '📄 Colouring pages', '🖨️ Print it'],
         progress: '',
         cta: 'Draw'
+      }));
+    }
+    if (shown('stickers')) {
+      play.push(this.featureCard({
+        go: 'stickers', cls: 'fc-stickers', icon: '🏷️', kicker: 'Design · fill in · print', title: 'Sticker Maker',
+        desc: 'Notebook labels, name tags, bottle labels and book plates. Add clip art, your photos or pictures from the internet, then print on sticker paper.',
+        chips: ['📒 Notebook labels', '🖼️ Photos & clip art', '👩‍🏫 Whole-class lists'],
+        progress: '',
+        cta: 'Make stickers'
       }));
     }
     this.$('home-play').innerHTML = play.join('');
@@ -323,6 +335,7 @@ class EduFairApp {
     };
     $('challenge-grid').addEventListener('click', onTile);
     $('arcade-back').addEventListener('click', () => this.showScreen('home'));
+    $('sm-back').addEventListener('click', () => this.showScreen('home'));
     // Landing page: feature cards and hero buttons
     $('screen-home').addEventListener('click', (e) => {
       const go = e.target.closest('[data-go]');
@@ -534,6 +547,10 @@ class EduFairApp {
     }
     if (CHALLENGES[challengeId].robo) {
       this.robo.open();
+      return;
+    }
+    if (CHALLENGES[challengeId].maker) {
+      this.stickers.open();
       return;
     }
     this.challengeId = challengeId;

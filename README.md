@@ -74,6 +74,18 @@ A personal learning journey for home or class, separate from the 60-second games
 
 Passkeys need the real **https://** site or `http://localhost`; on a plain `http://192.168…` address learners can still use “Just this device”. Server data lives in `data/wordquest.json` (the Docker setup mounts `./data` so it survives rebuilds). Words are in [`js/wordquest-data.js`](js/wordquest-data.js); add weeks in the same format.
 
+## 🏷️ Sticker Maker
+
+Design your own stickers and print them on 58 mm thermal **sticker paper**.
+
+- **Templates:** notebook label (name, class, section, roll no., subject, school), subject label, name tag, "This book belongs to", pencil labels (3 across), bottle & lunch-box labels (2 across), bag tag with phone number and QR code, birthday/gift tag, reward badge, happy note and blank.
+- **Fill in:** type the answers once. Empty boxes print as a line to write on. **Stickers for many people:** paste a class list (one per line, comma-separated) to print a sticker for everyone.
+- **Add:** text (6 font styles, bold, italic, white-on-black, wrapping), 200+ emoji clip art in 14 categories, shapes, QR codes, your own photos (gallery or camera), your Doodle Studio drawing, and **free pictures found online**: Iconify icons and Wikimedia Commons clip art, searched from inside the app with a kids' safety word filter.
+- **Photos print well:** each picture has a print style: photo dots, sketch (outline), bold or colour. 👁️ Print look shows exactly what the printer will make.
+- **Editing:** drag to move, ⤡ to resize, ⟳ to rotate (snaps to 90°), centre guides, layers, copy, undo/redo.
+- **Size:** vertical or horizontal (horizontal designs print sideways along the roll), 1–3 stickers across, any length from 10 to 200 mm, 13 border styles, copies, gap and cut lines. The print area is 48 mm wide (384 dots).
+- **My stickers:** save designs on the device and open them again later. The current design is kept automatically.
+
 ## 🤖 Robo Academy (electronics → robotics → AI)
 
 A self-paced, 24-week course for anyone who wants to become a robotics engineer: **one lesson a day**, a **weekly test** for a passport stamp, and real hands-on builds.
@@ -158,5 +170,7 @@ All content lives in [`js/challenges.js`](js/challenges.js), grouped by game and
     ├── wordquest.js        # Word Quest screens: lesson, puzzles, quiz, sticker book
     ├── qr.js               # Tiny QR code generator (YouTube links on lab sheets)
     ├── robo-data.js        # Robo Academy: 6 stages, 24 weeks, 120 lessons, weekly parts lists
-    └── robo.js             # Robo Academy screens, lab simulators, lab sheets, stamps
+    ├── robo.js             # Robo Academy screens, lab simulators, lab sheets, stamps
+    ├── stickers-data.js    # Sticker Maker templates, fonts, borders and clip art
+    └── stickers.js         # Sticker Maker editor, picture search, printing layout
 ```
