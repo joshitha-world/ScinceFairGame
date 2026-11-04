@@ -40,8 +40,9 @@ function wqWordSearch(words, size, rng, diagonal) {
   words.map(w => w.toUpperCase()).filter(w => w.length <= size && /^[A-Z]+$/.test(w)).forEach(word => {
     for (let tries = 0; tries < 300; tries++) {
       const [dx, dy] = dirs[Math.floor(rng() * dirs.length)];
-      const x0 = Math.floor(rng() * (size - (dx ? word.length : 0) + 1));
-      const y0 = Math.floor(rng() * (size - (dy ? word.length : 0) + 1));
+      // Start anywhere the whole word still fits: rows/columns 0 … size-1 (size - length when it runs that way)
+      const x0 = Math.floor(rng() * (size - (dx ? word.length : 1) + 1));
+      const y0 = Math.floor(rng() * (size - (dy ? word.length : 1) + 1));
       let ok = true;
       for (let i = 0; i < word.length && ok; i++) {
         const c = grid[y0 + dy * i][x0 + dx * i];

@@ -35,7 +35,67 @@ class ThermalPrinterController {
     }
   }
 
+  // Find a characteristic we can write print data to
+  async findWritable(server) {
+    for (const serviceUuid of POS58_SERVICES) {
+      try {
+        const service = await server.getPrimaryService(serviceUuid);
+        const chars = await service.getCharacteristics();
+        const c = chars.find(ch => ch.properties.write || ch.properties.writeWithoutResponse);
+        if (c) return c;
+      } catch (e) {
+        // try the next service
+      }
+    }
+    try {
+      for (const service of await server.getPrimaryServices()) {
+        const chars = await service.getCharacteristics();
+        const c = chars.find(ch => ch.properties.write || ch.properties.writeWithoutResponse);
+        if (c) return c;
+      }
+    } catch (err) {
+      console.warn('Could not enumerate primary services:', err);
+    }
+    return null;
+  }
+
+  // Printers sleep and tablets save power, so the Bluetooth link can drop between prints.
+  // Reconnect to the printer chosen earlier without showing the device picker again.
+  async ensureConnected() {
+    if (this.characteristic && this.device && this.device.gatt.connected) return true;
+    if (!this.device) return false;
+    try {
+      this.setStatus(`Reconnecting to ${this.deviceName}...`, false);
+      this.server = await this.withTimeout(this.device.gatt.connect(), 10000, 'Printer did not answer');
+      this.characteristic = await this.findWritable(this.server);
+      if (this.characteristic) {
+        this.setStatus(`Connected (${this.deviceName})`, true);
+        return true;
+      }
+    } catch (err) {
+      console.warn('Reconnect failed:', err);
+    }
+    this.setStatus('Disconnected', false);
+    return false;
+  }
+
+  withTimeout(promise, ms, message) {
+    let timer;
+    return Promise.race([
+      promise,
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(message)), ms); })
+    ]).finally(() => clearTimeout(timer));
+  }
+
   async connect() {
+    if (this.device) {
+      if (await this.ensureConnected()) return true;
+      // The printer we knew is off or out of range. Forget it so the next tap opens the picker
+      // (the browser only shows the picker straight after a tap, so we can't open it now).
+      this.device = null;
+      this.setStatus('Printer not found: tap print again to choose it', false);
+      return false;
+    }
     if (!this.isSupported()) {
       alert('Web Bluetooth is not supported in this browser.\nPlease use Google Chrome or Microsoft Edge on Windows/Mac/Android over localhost or HTTPS.');
       return false;
@@ -52,51 +112,16 @@ class ThermalPrinterController {
       this.deviceName = this.device.name || 'POS-58 Thermal';
       this.setStatus(`Connecting to ${this.deviceName}...`, false);
 
-      this.device.addEventListener('gattserverdisconnected', () => {
+      const device = this.device;
+      device.addEventListener('gattserverdisconnected', () => {
+        if (device !== this.device) return;
         this.setStatus('Disconnected', false);
         this.characteristic = null;
         this.server = null;
       });
 
-      this.server = await this.device.gatt.connect();
-
-      // Find any writable characteristic across standard POS services
-      let writeChar = null;
-
-      for (const serviceUuid of POS58_SERVICES) {
-        try {
-          const service = await this.server.getPrimaryService(serviceUuid);
-          const characteristics = await service.getCharacteristics();
-          for (const char of characteristics) {
-            if (char.properties.write || char.properties.writeWithoutResponse) {
-              writeChar = char;
-              break;
-            }
-          }
-          if (writeChar) break;
-        } catch (e) {
-          // Continue scanning next service
-        }
-      }
-
-      // If specific services not found, inspect all primary services
-      if (!writeChar) {
-        try {
-          const services = await this.server.getPrimaryServices();
-          for (const s of services) {
-            const chars = await s.getCharacteristics();
-            for (const c of chars) {
-              if (c.properties.write || c.properties.writeWithoutResponse) {
-                writeChar = c;
-                break;
-              }
-            }
-            if (writeChar) break;
-          }
-        } catch (err) {
-          console.warn('Could not enumerate primary services:', err);
-        }
-      }
+      this.server = await this.withTimeout(device.gatt.connect(), 15000, 'Printer did not answer');
+      const writeChar = await this.findWritable(this.server);
 
       if (!writeChar) {
         throw new Error('Connected to Bluetooth device, but no writable printer characteristic found.');
@@ -400,14 +425,7 @@ class ThermalPrinterController {
 
   async printDrawing(params, onProgress) {
     if (window.soundEngine) window.soundEngine.playPrintSound();
-    if (!this.isConnected || !this.characteristic) return false;
-    try {
-      await this.sendDataInChunks(this.buildDrawingCommands(params), onProgress);
-      return true;
-    } catch (err) {
-      console.error('Drawing print failed:', err);
-      return false;
-    }
+    return this.send(() => this.buildDrawingCommands(params), onProgress);
   }
 
   // Print a ready-made 384-dot-wide picture (Word Quest worksheets, stickers, learner cards)
@@ -424,53 +442,69 @@ class ThermalPrinterController {
 
   async printImage(source, options, onProgress) {
     if (window.soundEngine) window.soundEngine.playPrintSound();
-    if (!this.isConnected || !this.characteristic) return false;
+    return this.send(() => this.buildImageCommands(source, options), onProgress);
+  }
+
+  failMessage() {
+    if (this.lastError === 'busy') return 'Still printing the last one. Wait for it to finish, then print again.';
+    if (this.lastError === 'lost') return 'The printer stopped answering. Switch it off and on, then tap print again.';
+    if (this.lastError === 'not-connected') return 'The printer is not connected. Switch it on and tap print again.';
+    return 'Printing failed. Check the printer is on and has paper.';
+  }
+
+  // One print job at a time: a second job sent while the first is still going mixes their
+  // bytes together, which garbles the picture and can lock up the printer until it is restarted.
+  // lastError tells the screen what went wrong: 'busy', 'not-connected' or 'lost'.
+  async send(build, onProgress) {
+    this.lastError = '';
+    if (this.busy) {
+      this.lastError = 'busy';
+      return false;
+    }
+    this.busy = true;
     try {
-      await this.sendDataInChunks(this.buildImageCommands(source, options), onProgress);
+      if (!(await this.ensureConnected())) {
+        this.lastError = 'not-connected';
+        return false;
+      }
+      await this.sendDataInChunks(build(), onProgress);
       return true;
     } catch (err) {
-      console.error('Image print failed:', err);
+      console.error('Print failed:', err);
+      this.lastError = 'lost';
+      // Start fresh next time: drop the half-dead link so the next print reconnects cleanly
+      this.characteristic = null;
+      try { if (this.device && this.device.gatt.connected) this.device.gatt.disconnect(); } catch (e) { /* ignore */ }
+      this.setStatus('Disconnected', false);
       return false;
+    } finally {
+      this.busy = false;
     }
   }
 
-  // Send chunks to Bluetooth characteristic with flow control
+  // Send chunks to the Bluetooth characteristic with flow control. Each write has a time limit,
+  // so a link that died silently gives an error instead of waiting forever.
   async sendDataInChunks(data, onProgress) {
     if (!this.characteristic) throw new Error('Printer is not connected.');
-
     const CHUNK_SIZE = 64; // Safe size for BLE MTU
+    const ch = this.characteristic;
     for (let offset = 0; offset < data.length; offset += CHUNK_SIZE) {
       if (onProgress && offset % (CHUNK_SIZE * 16) === 0) onProgress(offset / data.length);
       const chunk = data.slice(offset, offset + CHUNK_SIZE);
-      if (this.characteristic.properties.writeWithoutResponse) {
-        await this.characteristic.writeValueWithoutResponse(chunk);
-      } else {
-        await this.characteristic.writeValue(chunk);
-      }
+      const write = ch.properties.writeWithoutResponse ? ch.writeValueWithoutResponse(chunk) : ch.writeValue(chunk);
+      await this.withTimeout(write, 5000, 'Printer stopped responding');
       // Brief pause between packets to prevent BLE buffer overflow
       await new Promise(r => setTimeout(r, 20));
     }
+    if (onProgress) onProgress(1);
   }
 
-  // Main print routine
+  // Main print routine (keepsake receipt); false lets the caller fall back to a normal printer
   async printReceipt(params) {
     if (window.soundEngine) window.soundEngine.playPrintSound();
-
-    if (!this.isConnected || !this.characteristic) {
-      // Return false so caller can fall back to browser print or virtual receipt
-      return false;
-    }
-
-    try {
-      const binaryData = this.buildEscPosCommands(params);
-      await this.sendDataInChunks(binaryData);
-      return true;
-    } catch (err) {
-      console.error('Print transmission failed:', err);
-      return false;
-    }
+    if (!this.device) return false;
+    return this.send(() => this.buildEscPosCommands(params));
   }
 }
 
 window.printerController = new ThermalPrinterController();
-

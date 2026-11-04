@@ -803,6 +803,10 @@ class DoodleStudio {
   async printDrawing() {
     const status = this.$('studio-print-status');
     const printer = window.printerController;
+    if (printer.busy) {
+      status.textContent = 'Still printing the last one. Please wait…';
+      return;
+    }
     if (!printer.isConnected) {
       status.textContent = 'Connecting to the printer…';
       const ok = await printer.connect();
@@ -827,7 +831,7 @@ class DoodleStudio {
       status.textContent = '🎉 Printed! Tear off your masterpiece.';
       window.confettiEngine.burst();
     } else {
-      status.textContent = 'Printing failed. Check the printer is on and has paper.';
+      status.textContent = printer.failMessage();
     }
   }
 

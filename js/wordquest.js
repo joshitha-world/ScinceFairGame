@@ -1530,21 +1530,34 @@ class WordQuest {
     const job = this.printJob;
     if (!job) return;
     const printer = window.printerController;
-    if (!printer.isConnected) {
-      this.printStatus('Connecting to the printer…');
-      const ok = await printer.connect();
-      if (!ok) {
-        this.printStatus('Could not connect to the POS-58 printer. Try the normal printer or save the picture.', 'bad');
-        return;
-      }
+    if (printer.busy) {
+      this.printStatus('Still printing the last one. Please wait…');
+      return;
     }
-    this.printStatus('Printing… 0%');
-    const ok = await printer.printImage(job.canvas, { gamma: WQ_GAMMA, method: 'sheet' }, (pr) => this.printStatus(`Printing… ${Math.round(pr * 100)}%`));
-    if (ok) {
-      this.printStatus('🎉 Printed! Tear it off carefully.', 'good');
-      if (job.onPrinted) job.onPrinted();
-    } else {
-      this.printStatus('Printing failed. Check the printer is on and has paper.', 'bad');
+    // One tap = one print: block extra taps until this job has finished
+    const btn = this.modal.querySelector('[data-act="print-bt"]');
+    if (btn) btn.disabled = true;
+    try {
+      if (!printer.isConnected) {
+        this.printStatus('Connecting to the printer…');
+        const ok = await printer.connect();
+        if (!ok) {
+          this.printStatus(printer.device === null && printer.isSupported()
+            ? 'Could not reach the printer. Switch it on and tap print again to choose it.'
+            : 'Could not connect to the POS-58 printer. Try the normal printer or save the picture.', 'bad');
+          return;
+        }
+      }
+      this.printStatus('Printing… 0%');
+      const ok = await printer.printImage(job.canvas, { gamma: WQ_GAMMA, method: 'sheet' }, (pr) => this.printStatus(`Printing… ${Math.round(pr * 100)}%`));
+      if (ok) {
+        this.printStatus('🎉 Printed! Tear it off carefully.', 'good');
+        if (job.onPrinted) job.onPrinted();
+      } else {
+        this.printStatus(printer.failMessage(), 'bad');
+      }
+    } finally {
+      if (btn) btn.disabled = false;
     }
   }
 

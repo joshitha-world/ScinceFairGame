@@ -940,6 +940,10 @@ class EduFairApp {
   }
 
   async handleBluetoothPrint() {
+    if (window.printerController.busy) {
+      this.showToast('🖨️ Still printing… please wait');
+      return;
+    }
     if (window.cameraController.isActive) this.snapWebcamPhoto();
 
     if (!window.printerController.isConnected) {
@@ -966,7 +970,7 @@ class EduFairApp {
       window.confettiEngine.burst();
       this.showToast('🖨️ Printing your keepsake!');
     } else {
-      alert('Printing failed. Check the POS-58 is switched on and has paper.');
+      alert(window.printerController.failMessage());
     }
   }
 
