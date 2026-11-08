@@ -2,7 +2,7 @@
 // Enables 100% Offline Kiosk Operation for Edu Fair 2026 (Sloka The School)
 
 // Bump this whenever app files change so tablets pick up the new version
-const CACHE_NAME = 'sloka-edufair-cache-v14';
+const CACHE_NAME = 'sloka-edufair-cache-v15';
 
 const STATIC_ASSETS = [
   './',
@@ -62,6 +62,9 @@ self.addEventListener('activate', (event) => {
 // 3. Fetch Event: Stale-While-Revalidate & Cache-First with Network fallback
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+
+  // Other websites (picture libraries, YouTube) go straight to the browser
+  if (url.origin !== self.location.origin) return;
 
   // If request is for dynamic sync API, attempt network, fallback to offline response
   if (url.pathname.startsWith('/api/')) {

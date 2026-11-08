@@ -10,6 +10,10 @@ const SM_HISTORY = 40;
 const SM_STORE = 'sm_designs';
 const SM_CURRENT = 'sm_current';
 const SM_MAX_SAVED = 24;
+const SM_ICON_API = 'https://api.iconify.design';
+const SM_ICON_MAX = 60;       // icons shown per search
+const SM_ICON_SETS = 16;      // icon sets asked for per search (one small request each)
+const SM_ICON_PER_SET = 16;
 
 const smClamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const smEsc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -728,37 +732,45 @@ class StickerMaker {
   }
 
   // Shrink big photos before keeping them (saved designs live in the browser's storage)
-  addImageFromUrl(url, { credit = '', style = 'photo', revoke = false } = {}) {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      const max = 700;
-      const s = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
-      const c = document.createElement('canvas');
-      c.width = Math.max(1, Math.round(img.naturalWidth * s));
-      c.height = Math.max(1, Math.round(img.naturalHeight * s));
-      const ctx = c.getContext('2d');
-      ctx.drawImage(img, 0, 0, c.width, c.height);
-      let opaque = true;
-      try {
-        const d = ctx.getImageData(0, 0, c.width, c.height).data;
-        for (let i = 3; i < d.length; i += 16) if (d[i] < 250) { opaque = false; break; }
-      } catch (e) {
-        this.app.showToast('That picture can\'t be used, try another one');
-        return;
-      }
-      const src = opaque ? c.toDataURL('image/jpeg', 0.85) : c.toDataURL('image/png');
-      if (revoke) URL.revokeObjectURL(url);
-      const id = this.addAsset(src, credit);
-      const { W, H } = this.geom();
-      const fitW = W * 0.7;
-      const fitH = H * 0.7;
-      const r = Math.min(fitW / c.width, fitH / c.height);
-      this.addElement({ type: 'image', asset: id, w: +(c.width * r).toFixed(1), h: +(c.height * r).toFixed(1), style, bright: 0, contrast: 0, flip: false });
-      this.app.showToast('🖼️ Picture added');
-    };
-    img.onerror = () => this.app.showToast('Could not load that picture');
-    img.src = url;
+  // Resolves true once the picture is on the sticker, false if it could not be used
+  addImageFromUrl(url, { credit = '', style = 'photo', revoke = false, quiet = false } = {}) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const max = 700;
+        const s = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+        const c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(img.naturalWidth * s));
+        c.height = Math.max(1, Math.round(img.naturalHeight * s));
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        let opaque = true;
+        try {
+          const d = ctx.getImageData(0, 0, c.width, c.height).data;
+          for (let i = 3; i < d.length; i += 16) if (d[i] < 250) { opaque = false; break; }
+        } catch (e) {
+          if (!quiet) this.app.showToast('That picture can\'t be used, try another one');
+          resolve(false);
+          return;
+        }
+        const src = opaque ? c.toDataURL('image/jpeg', 0.85) : c.toDataURL('image/png');
+        if (revoke) URL.revokeObjectURL(url);
+        const id = this.addAsset(src, credit);
+        const { W, H } = this.geom();
+        const fitW = W * 0.7;
+        const fitH = H * 0.7;
+        const r = Math.min(fitW / c.width, fitH / c.height);
+        this.addElement({ type: 'image', asset: id, w: +(c.width * r).toFixed(1), h: +(c.height * r).toFixed(1), style, bright: 0, contrast: 0, flip: false });
+        this.app.showToast('🖼️ Picture added');
+        resolve(true);
+      };
+      img.onerror = () => {
+        if (!quiet) this.app.showToast('Could not load that picture');
+        resolve(false);
+      };
+      img.src = url;
+    });
   }
 
   importFile(file) {
@@ -782,8 +794,8 @@ class StickerMaker {
     const q = (this.$('sm-search') ? this.$('sm-search').value : this.search.q).trim();
     this.search.q = q;
     if (!q) return;
+    this.clearResults();
     if (SM_BLOCKED.test(q)) {
-      this.search.results = [];
       this.search.status = 'Let\'s search for something else 🙂';
       this.renderPanel();
       return;
@@ -793,43 +805,143 @@ class StickerMaker {
       this.renderPanel();
       return;
     }
+    // Only the newest search may show its results (a slow one must not overwrite it)
+    this.searchRun = (this.searchRun || 0) + 1;
+    const run = this.searchRun;
+    const source = this.search.source;
     this.search.status = 'Searching…';
-    this.search.results = [];
     this.renderPanel();
+    let results = [];
+    let status = '';
     try {
-      this.search.results = this.search.source === 'icons' ? await this.searchIcons(q) : await this.searchCommons(q);
-      this.search.status = this.search.results.length ? '' : 'Nothing found. Try a simpler word like "cat" or "flower".';
+      results = source === 'icons' ? await this.searchIcons(q) : await this.searchCommons(q);
+      status = results.length ? '' : 'Nothing found. Try a simpler word like "cat" or "flower".';
     } catch (e) {
-      this.search.status = 'Could not reach the picture library. Check the internet and try again.';
+      status = 'The picture library is busy or can\'t be reached. Wait a minute and search again.';
     }
+    if (run !== this.searchRun) {
+      results.forEach(r => { if (r.icon) URL.revokeObjectURL(r.thumb); });
+      return;
+    }
+    this.search.results = results;
+    this.search.status = status;
     this.renderPanel();
   }
 
+  clearResults() {
+    this.search.results.forEach(r => { if (r.icon) URL.revokeObjectURL(r.thumb); });
+    this.search.results = [];
+    this.search.status = '';
+  }
+
+  // JSON from a picture service: one retry, a time limit, and HTTP errors treated as failures
+  async fetchJson(url, tries = 2) {
+    for (let attempt = 1; ; attempt++) {
+      const stop = new AbortController();
+      const timer = setTimeout(() => stop.abort(), 12000);
+      try {
+        const res = await fetch(url, { signal: stop.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+      } catch (e) {
+        if (attempt >= tries) throw e;
+        await new Promise(r => setTimeout(r, 800));
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+  }
+
+  // Turn one entry of an Iconify set into a complete SVG (null if we can't draw it exactly)
+  iconSvg(set, name) {
+    let icon = set.icons && set.icons[name];
+    let sizes = {};
+    let id = name;
+    for (let depth = 0; !icon && depth < 4; depth++) {
+      const alias = set.aliases && set.aliases[id];
+      if (!alias || alias.hFlip || alias.vFlip || alias.rotate) return null;
+      sizes = { ...alias, ...sizes };
+      id = alias.parent;
+      icon = set.icons && set.icons[id];
+    }
+    if (!icon || typeof icon.body !== 'string' || icon.hFlip || icon.vFlip || icon.rotate) return null;
+    const pick = (k, fallback) => sizes[k] ?? icon[k] ?? set[k] ?? fallback;
+    const left = pick('left', 0);
+    const top = pick('top', 0);
+    const w = pick('width', 16);
+    const h = pick('height', 16);
+    const scale = 512 / Math.max(w, h);
+    const mono = icon.body.includes('currentColor');
+    const body = icon.body.replace(/currentColor/g, '#000');
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(w * scale)}" height="${Math.round(h * scale)}" viewBox="${left} ${top} ${w} ${h}">${body}</svg>`;
+    return { svg, mono };
+  }
+
+  // Iconify rate-limits its one-icon-per-request .svg address (each preview used to be a request,
+  // so after a search or two every click failed). The .json address returns many drawings in one
+  // small request, so we fetch the drawings here and draw previews from them: anything shown on
+  // screen is already on the device, and adding it needs no network at all.
   async searchIcons(q) {
-    const res = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(q)}&limit=200`);
-    const data = await res.json();
+    const data = await this.fetchJson(`${SM_ICON_API}/search?query=${encodeURIComponent(q)}&limit=200`);
     const prefer = ['fluent-emoji-flat', 'noto', 'twemoji', 'openmoji', 'streamline-emojis', 'fxemoji', 'emojione', 'mdi', 'ph', 'tabler', 'game-icons', 'lucide', 'icon-park-outline', 'mingcute', 'healthicons', 'material-symbols'];
     const rank = (id) => { const i = prefer.indexOf(id.split(':')[0]); return i === -1 ? 99 : i; };
-    return (data.icons || []).sort((a, b) => rank(a) - rank(b)).slice(0, 60).map(id => {
+    const ranked = (data.icons || []).filter(id => /^[a-z0-9-]+:[a-z0-9-]+$/.test(id)).sort((a, b) => rank(a) - rank(b));
+
+    const sets = new Map();
+    ranked.forEach(id => {
       const [prefix, name] = id.split(':');
-      return { thumb: `https://api.iconify.design/${prefix}/${name}.svg?height=64`, title: name.replace(/-/g, ' '), icon: id, credit: `Icon: ${prefix} (Iconify)` };
+      if (!sets.has(prefix) && sets.size >= SM_ICON_SETS) return;
+      if (!sets.has(prefix)) sets.set(prefix, []);
+      if (sets.get(prefix).length < SM_ICON_PER_SET) sets.get(prefix).push(name);
     });
+
+    // Fetch a few sets at a time; a set that fails just means fewer pictures, not an error
+    if (!this.iconCache) this.iconCache = new Map();
+    const queue = [...sets.entries()];
+    let failed = 0;
+    const worker = async () => {
+      while (queue.length) {
+        const [prefix, names] = queue.shift();
+        const missing = names.filter(n => !this.iconCache.has(`${prefix}:${n}`));
+        if (!missing.length) continue;
+        try {
+          const set = await this.fetchJson(`${SM_ICON_API}/${prefix}.json?icons=${missing.join(',')}`);
+          missing.forEach(n => this.iconCache.set(`${prefix}:${n}`, this.iconSvg(set, n)));
+        } catch (e) {
+          failed++;
+        }
+      }
+    };
+    await Promise.all([worker(), worker(), worker(), worker()]);
+    if (failed && failed === sets.size) throw new Error('No icon set could be loaded');
+
+    const results = [];
+    ranked.forEach(id => {
+      const drawn = this.iconCache.get(id);
+      if (!drawn || results.length >= SM_ICON_MAX) return;
+      const [prefix, name] = id.split(':');
+      results.push({
+        icon: id, svg: drawn.svg, mono: drawn.mono, title: name.replace(/-/g, ' '),
+        thumb: URL.createObjectURL(new Blob([drawn.svg], { type: 'image/svg+xml' })),
+        credit: `Icon: ${prefix} (Iconify)`
+      });
+    });
+    return results;
   }
 
   async searchCommons(q) {
     const url = 'https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search'
       + `&gsrsearch=${encodeURIComponent(`filemime:image/svg+xml ${q} clipart`)}&gsrnamespace=6&gsrlimit=40`
-      + '&prop=imageinfo&iiprop=url%7Cextmetadata&iiurlwidth=300&iiextmetadatafilter=LicenseShortName%7CArtist';
-    const res = await fetch(url);
-    const data = await res.json();
+      + '&prop=imageinfo&iiprop=url%7Cextmetadata&iiurlwidth=500&iiextmetadatafilter=LicenseShortName%7CArtist';
+    const data = await this.fetchJson(url);
     const pages = Object.values((data.query && data.query.pages) || {}).sort((a, b) => (a.index || 0) - (b.index || 0));
-    return pages.filter(p => p.imageinfo && !SM_BLOCKED.test(p.title)).map(p => {
+    return pages.filter(p => p.imageinfo && p.imageinfo[0].thumburl && !SM_BLOCKED.test(p.title)).map(p => {
       const ii = p.imageinfo[0];
       const meta = ii.extmetadata || {};
       const artist = ((meta.Artist && meta.Artist.value) || '').replace(/<[^>]*>/g, '').trim().slice(0, 40);
       const license = (meta.LicenseShortName && meta.LicenseShortName.value) || '';
       return {
-        thumb: ii.thumburl, big: ii.thumburl.replace(/\/300px-/, '/700px-'),
+        thumb: ii.thumburl,
         title: p.title.replace(/^File:/, '').replace(/\.svg$/i, ''),
         credit: [artist, license, 'Wikimedia Commons'].filter(Boolean).join(' · ')
       };
@@ -838,22 +950,21 @@ class StickerMaker {
 
   async pickResult(i) {
     const r = this.search.results[i];
-    if (!r) return;
-    this.app.showToast('⏬ Adding picture…');
+    if (!r || this.picking) return;
+    this.picking = true;
     try {
       if (r.icon) {
-        const [prefix, name] = r.icon.split(':');
-        let svg = await (await fetch(`https://api.iconify.design/${prefix}/${name}.svg?height=512`)).text();
-        const mono = svg.includes('currentColor');
-        svg = svg.replace(/currentColor/g, '#000');
-        const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
-        this.addImageFromUrl(url, { credit: r.credit, style: mono ? 'bold' : 'color', revoke: true });
-      } else {
-        const blob = await (await fetch(r.big)).blob();
-        this.addImageFromUrl(URL.createObjectURL(blob), { credit: r.credit, style: 'color', revoke: true });
+        const url = URL.createObjectURL(new Blob([r.svg], { type: 'image/svg+xml' }));
+        await this.addImageFromUrl(url, { credit: r.credit, style: r.mono ? 'bold' : 'color', revoke: true });
+        return;
       }
-    } catch (e) {
-      this.app.showToast('Could not download that picture');
+      // Clip art uses the picture its preview already downloaded, with one retry
+      const opts = { credit: r.credit, style: 'color', quiet: true };
+      if (await this.addImageFromUrl(r.thumb, opts)) return;
+      await new Promise(res => setTimeout(res, 800));
+      if (!(await this.addImageFromUrl(r.thumb, opts))) this.app.showToast('That picture is not available right now. Try another one.');
+    } finally {
+      this.picking = false;
     }
   }
 
@@ -931,7 +1042,7 @@ class StickerMaker {
       </div>
       <div class="sm-search-row"><input type="search" id="sm-search" value="${smEsc(s.q)}" placeholder="e.g. owl, rocket, sunflower" enterkeyhint="search" autocomplete="off"><button class="btn btn-primary" data-sm="search">Search</button></div>
       ${s.status ? `<p class="sm-hint">${smEsc(s.status)}</p>` : ''}
-      <div class="sm-results">${s.results.map((r, i) => `<button data-sm="pick" data-v="${i}" title="${smEsc(r.title)}"><img loading="lazy" alt="${smEsc(r.title)}" src="${smEsc(r.thumb)}"></button>`).join('')}</div>
+      <div class="sm-results">${s.results.map((r, i) => `<button data-sm="pick" data-v="${i}" title="${smEsc(r.title)}"><img loading="lazy" crossorigin="anonymous" alt="${smEsc(r.title)}" src="${smEsc(r.thumb)}"></button>`).join('')}</div>
       <p class="sm-hint small">Icons from Iconify and clip art from Wikimedia Commons are free to use. A grown-up should help with searching.</p>`;
   }
 
@@ -1284,7 +1395,7 @@ class StickerMaker {
       case 'add-shape': return this.addShape(d.v);
       case 'add-emoji': return this.addEmoji(d.v);
       case 'clipcat': this.clipCat = Number(d.v); return this.renderPanel();
-      case 'source': this.search.source = d.v; this.search.results = []; this.search.status = ''; this.renderPanel(); return this.search.q ? this.runSearch() : null;
+      case 'source': this.search.source = d.v; this.searchRun = (this.searchRun || 0) + 1; this.clearResults(); this.renderPanel(); return this.search.q ? this.runSearch() : null;
       case 'search': return this.runSearch();
       case 'pick': return this.pickResult(Number(d.v));
       case 'select': this.selected = Number(d.v); this.renderPanel(); return this.render();
