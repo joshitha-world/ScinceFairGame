@@ -74,6 +74,17 @@ A personal learning journey for home or class, separate from the 60-second games
 
 Passkeys need the real **https://** site or `http://localhost`; on a plain `http://192.168…` address learners can still use “Just this device”. Server data lives in `data/wordquest.json` (the Docker setup mounts `./data` so it survives rebuilds). Words are in [`js/wordquest-data.js`](js/wordquest-data.js); add weeks in the same format.
 
+## 🎙️ Story Spark
+
+Daily storytelling practice for UKG to Grade 5 (3 levels, 12 themed weeks each, 180 Power Sentences).
+
+- **Sentence Gym:** each day has a Power Sentence to learn by heart: listen and repeat, words fade away, say it from memory, then swap words to make it your own. Learned sentences return on a spaced schedule (1, 2, 4, 7, 14, 30 days) as a warm-up, and print on a practice card.
+- **Daily story:** spin a character, place and problem, then tell one part each day (Retell, Character, Setting, Problem, Ending). Tap the mic for each sentence, or type. UKG speaks and records instead, and a grown-up ticks what they heard.
+- **Story Coach:** feedback that runs on the device with no AI service: two stars and one wish, then "make it better". The optional **Grown-up + AI mentor** button copies a ready prompt and opens Gemini.
+- **Print:** a daily Story Receipt, weekend mini book, Author Stamp and practice card.
+- **Hear how you've grown:** recordings stay on the device and the first story plays next to the latest.
+- Voice typing uses the browser's free speech service, which needs internet and sends audio to Google. Open directly with `/#story`. Content lives in [`js/story-data.js`](js/story-data.js).
+
 ## 🏷️ Sticker Maker
 
 Design your own stickers and print them on 58 mm thermal **sticker paper**.

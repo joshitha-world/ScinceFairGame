@@ -53,6 +53,10 @@ const CHALLENGES = {
   robo: {
     id: 'robo', title: 'Robo Academy', subject: 'Electronics → Robots → AI', icon: '🤖', color: '#0369a1', robo: true, wide: true
   },
+  // Daily storytelling with memorised Power Sentences
+  story: {
+    id: 'story', title: 'Story Spark', subject: 'Speak, practise and tell stories', icon: '🎙️', color: '#db2777', storyteller: true, wide: true
+  },
   // Design-and-print stickers: notebook labels, name tags, clip art, photos
   stickers: {
     id: 'stickers', title: 'Sticker Maker', subject: 'Design & print your own stickers', icon: '🏷️', color: '#db2777', maker: true, wide: true

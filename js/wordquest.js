@@ -405,9 +405,10 @@ class WordQuest {
   }
 
   go(view, params = {}) {
-    if (this.returnTo === 'robo' && (view === 'dash' || view === 'welcome')) {
+    if (this.returnTo && (view === 'dash' || view === 'welcome')) {
+      const target = this.returnTo;
       this.returnTo = null;
-      return this.app.robo.open();
+      return this.app[target].open();
     }
     if (!this.store.current && !['welcome', 'create', 'signin'].includes(view)) view = 'welcome';
     this.view = view;
@@ -490,7 +491,7 @@ class WordQuest {
   }
 
   startCreate() {
-    this.draft = { name: '', avatar: wqPick(WQ_AVATARS), track: this.returnTo === 'robo' ? 'master' : '' };
+    this.draft = { name: '', avatar: wqPick(WQ_AVATARS), track: { robo: 'master', story: 'sprout' }[this.returnTo] || '' };
     this.go('create');
   }
 

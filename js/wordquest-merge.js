@@ -9,6 +9,13 @@
 //   robo: {   Robo Academy
 //     lessons: { 'd001': { stars, built, at, printed } },
 //     tests:   { 'w01':  { best, total, tier, tries, at } }   tier 1 = passed, 2 = distinction
+//   },
+//   story: {  Story Spark
+//     level, levelAt, start,
+//     days:    { 'YYYY-MM-DD': { l, wk, stars, words, w0, senses, text, coach, at, printed } },
+//     bank:    { 'sprouts-3-2': { box, due, reps, at, last, mine } },   memorised sentences
+//     sparks:  { monday: { h, p, x } },
+//     quizzes: { monday: { best, total, tier, tries, at } }
 //   }
 // }
 
@@ -18,6 +25,7 @@
   const STICKER_RE = /^[a-z0-9-]{1,40}$/;
   const LESSON_RE = /^d\d{3}$/;
   const TEST_RE = /^w\d{2}$/;
+  const BANK_RE = /^[a-z]+-\d+-\d$/;
 
   const num = (v, max) => {
     const n = Math.floor(Number(v));
@@ -56,6 +64,66 @@
     return { best: num(t.best, 100), total: num(t.total, 100), tier: num(t.tier, 2), tries: num(t.tries, 9999), at: num(t.at, 9e15) };
   }
 
+  function cleanStoryDay(d) {
+    if (!d || typeof d !== 'object') return null;
+    return {
+      l: str(d.l, 20), wk: num(d.wk, 999), stars: num(d.stars, 3), words: num(d.words, 9999), w0: num(d.w0, 9999),
+      senses: num(d.senses, 999), text: str(d.text, 800), coach: str(d.coach, 300), at: num(d.at, 9e15), printed: num(d.printed, 999)
+    };
+  }
+
+  function cleanBank(b) {
+    if (!b || typeof b !== 'object') return null;
+    return {
+      box: num(b.box, 9), due: KEY_RE.test(b.due) ? b.due : '', reps: num(b.reps, 99999),
+      at: num(b.at, 9e15), last: num(b.last, 9e15), mine: str(b.mine)
+    };
+  }
+
+  function cleanSpark(s) {
+    if (!s || typeof s !== 'object') return null;
+    return { h: num(s.h, 9), p: num(s.p, 9), x: num(s.x, 9) };
+  }
+
+  function cleanStory(s) {
+    s = s && typeof s === 'object' ? s : {};
+    return {
+      level: str(s.level, 20), levelAt: num(s.levelAt, 9e15), start: KEY_RE.test(s.start) ? s.start : '',
+      days: cleanMap(s.days, KEY_RE, cleanStoryDay, LIMITS.days),
+      bank: cleanMap(s.bank, BANK_RE, cleanBank, 600),
+      sparks: cleanMap(s.sparks, KEY_RE, cleanSpark, 800),
+      quizzes: cleanMap(s.quizzes, KEY_RE, cleanQuiz, LIMITS.quizzes)
+    };
+  }
+
+  function mergeStory(a, b) {
+    const later = b.levelAt > a.levelAt ? b : a;
+    const out = {
+      level: later.level, levelAt: later.levelAt, start: later.start,
+      days: { ...a.days }, bank: { ...a.bank }, sparks: { ...b.sparks, ...a.sparks }, quizzes: { ...a.quizzes }
+    };
+    Object.entries(b.days).forEach(([k, d]) => {
+      const o = out.days[k];
+      if (!o) { out.days[k] = d; return; }
+      const keep = d.text.length > o.text.length ? d : o;
+      out.days[k] = { ...keep, stars: Math.max(o.stars, d.stars), at: earliest(o.at, d.at), printed: Math.max(o.printed, d.printed) };
+    });
+    // The most recent review of a sentence decides its schedule
+    Object.entries(b.bank).forEach(([k, e]) => {
+      const o = out.bank[k];
+      if (!o) { out.bank[k] = e; return; }
+      const keep = e.last > o.last ? e : o;
+      out.bank[k] = { ...keep, reps: Math.max(o.reps, e.reps), at: earliest(o.at, e.at) };
+    });
+    Object.entries(b.quizzes).forEach(([k, q]) => {
+      const o = out.quizzes[k];
+      if (!o) { out.quizzes[k] = q; return; }
+      const better = q.best > o.best ? q : o;
+      out.quizzes[k] = { ...better, tier: Math.max(o.tier, q.tier), tries: Math.max(o.tries, q.tries) };
+    });
+    return out;
+  }
+
   function cleanMap(map, keyRe, clean, limit) {
     const out = {};
     if (!map || typeof map !== 'object') return out;
@@ -76,7 +144,8 @@
       robo: {
         lessons: cleanMap(p.robo && p.robo.lessons, LESSON_RE, cleanLesson, 500),
         tests: cleanMap(p.robo && p.robo.tests, TEST_RE, cleanTest, 100)
-      }
+      },
+      story: cleanStory(p.story)
     };
   }
 
@@ -87,7 +156,8 @@
     b = cleanProgress(b);
     const out = {
       days: { ...a.days }, quizzes: { ...a.quizzes }, stickers: { ...a.stickers },
-      robo: { lessons: { ...a.robo.lessons }, tests: { ...a.robo.tests } }
+      robo: { lessons: { ...a.robo.lessons }, tests: { ...a.robo.tests } },
+      story: mergeStory(a.story, b.story)
     };
 
     Object.entries(b.days).forEach(([k, d]) => {

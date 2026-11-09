@@ -35,10 +35,12 @@ class EduFairApp {
     this.quest = new WordQuest(this);
     this.robo = new RoboAcademy(this);
     this.stickers = new StickerMaker(this);
+    this.story = new StorySpark(this);
     this.renderHome();
     if (location.hash === '#quest') this.quest.open();
     if (location.hash === '#robo') this.robo.open();
     if (location.hash === '#stickers') this.stickers.open();
+    if (location.hash === '#story') this.story.open();
   }
 
   // Keepsake photo side: Android tablets (camera on the left in landscape) default to the
@@ -59,7 +61,7 @@ class EduFairApp {
     const $ = (id) => document.getElementById(id);
     this.$ = $;
 
-    this.screens = { home: $('screen-home'), game: $('screen-game'), results: $('screen-results'), studio: $('screen-studio'), quest: $('screen-quest'), robo: $('screen-robo'), arcade: $('screen-arcade'), stickers: $('screen-stickers') };
+    this.screens = { home: $('screen-home'), game: $('screen-game'), results: $('screen-results'), studio: $('screen-studio'), quest: $('screen-quest'), robo: $('screen-robo'), arcade: $('screen-arcade'), stickers: $('screen-stickers'), story: $('screen-story') };
     this.playerNameInput = $('player-name-input');
 
     // HUD
@@ -150,6 +152,7 @@ class EduFairApp {
     if (where === 'robo') return this.robo.open();
     if (where === 'studio') return this.studio.open();
     if (where === 'stickers') return this.stickers.open();
+    if (where === 'story') return this.story.open();
     if (where === 'arcade') return this.showScreen('arcade');
     return null;
   }
@@ -171,7 +174,7 @@ class EduFairApp {
 
   // Landing page: feature cards with the current learner's progress, and the hero "continue" chip
   renderHome() {
-    if (!this.quest || !this.robo) return;
+    if (!this.quest || !this.robo || !this.story) return;
     const shown = (id) => !this.hiddenGames.includes(id);
     const store = this.quest.store;
     const learner = store.current;
@@ -189,6 +192,16 @@ class EduFairApp {
         chips: ['🖨️ Daily worksheet', '🏅 Collect stickers', '🔊 Hear every word'],
         progress: learner ? `${avatar} ${name} · 📚 ${wq.words} words · 🔥 ${wq.streak} day streak · 🏅 ${wq.stickers}` : '',
         cta: learner && wq.words ? 'Continue' : 'Start'
+      }));
+    }
+    if (shown('story')) {
+      const st = learner ? this.story.stats() : null;
+      learn.push(this.featureCard({
+        go: 'story', cls: 'fc-story', icon: '🎙️', kicker: 'Speak · practise · tell stories', title: 'Story Spark',
+        desc: 'Practise powerful sentences until they stick, tell a new story every day by voice, and hear how much you grow. UKG to Grade 5.',
+        chips: ['💪 Sentence Gym', '🧑‍🏫 Story Coach', '🖨️ Story Receipt'],
+        progress: learner && st.stories ? `${avatar} ${name} · 📖 ${st.stories} stories · 🔥 ${st.streak} · 💪 ${st.mastered} by heart` : '',
+        cta: learner && st.stories ? 'Continue' : 'Start'
       }));
     }
     if (shown('robo')) {
@@ -547,6 +560,10 @@ class EduFairApp {
     }
     if (CHALLENGES[challengeId].robo) {
       this.robo.open();
+      return;
+    }
+    if (CHALLENGES[challengeId].storyteller) {
+      this.story.open();
       return;
     }
     if (CHALLENGES[challengeId].maker) {

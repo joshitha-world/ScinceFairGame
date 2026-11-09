@@ -37,6 +37,9 @@ jobs:
           node -c js/robo.js
           node -c js/stickers-data.js
           node -c js/stickers.js
+          node -c js/story-data.js
+          node -c js/story-coach.js
+          node -c js/story.js
           node -c wordquest-server.js
           node -c js/audio.js
           node -c js/confetti.js

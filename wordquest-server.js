@@ -22,7 +22,7 @@ const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'wordquest.json');
 const SESSION_DAYS = 120;
 const CHALLENGE_MS = 5 * 60 * 1000;
-const MAX_BODY = 512 * 1024;
+const MAX_BODY = 2 * 1024 * 1024; // stories and sentences add up over the years
 const ALGS = { '-7': 'ES256', '-8': 'EdDSA', '-257': 'RS256' };
 
 const b64u = (buf) => Buffer.from(buf).toString('base64url');

@@ -105,7 +105,7 @@ const WQPasskey = {
   }
 };
 
-const wqEmptyProgress = () => ({ days: {}, quizzes: {}, stickers: {}, robo: { lessons: {}, tests: {} } });
+const wqEmptyProgress = () => ({ days: {}, quizzes: {}, stickers: {}, robo: { lessons: {}, tests: {} }, story: WQMerge.cleanProgress({}).story });
 
 class WQStore {
   constructor(onChange) {
