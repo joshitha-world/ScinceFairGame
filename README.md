@@ -144,6 +144,7 @@ All content lives in [`js/challenges.js`](js/challenges.js), grouped by game and
 - The results screen opens the webcam for a selfie (with a cartoon fallback if there's no camera).
 - **Print keepsake** sends an ESC/POS receipt with a dithered photo to a POS-58 (58 mm / 384-dot) Bluetooth printer via Web Bluetooth. Text is ASCII-only so it prints cleanly on the printer's default code page.
 - **"or use a normal printer"** prints the on-screen slip through the browser.
+- **Pocket "cat printers" work too** (the cute mini printers used with the Fun Print / iPrint apps: GB01-GB03, MX05-MX11, YT01, MXW01, sold under many brand names). They do not understand ESC/POS, so when one connects the app detects it (and which of the two command sets it speaks) and draws every receipt, worksheet and sticker as rows of dots in the printer's own format. Nothing else changes: pick the printer from the same Bluetooth list.
 
 ## 🏆 Leaderboard
 
@@ -172,7 +173,7 @@ All content lives in [`js/challenges.js`](js/challenges.js), grouped by game and
     ├── camera.js       # Webcam snapshot with cartoon fallback
     ├── confetti.js     # Confetti bursts
     ├── leaderboard.js  # localStorage scores, CSV export, server sync
-    ├── printer.js      # Web Bluetooth POS-58 ESC/POS driver: dithering, banded images, receipts & drawings
+    ├── printer.js      # Web Bluetooth printing: POS-58 (ESC/POS) and cat printers (GB/MX, MXW01), dithering, receipts & drawings
     ├── studio.js       # Doodle Studio: drawing tools, colouring pages, print preview
     ├── wordquest-data.js   # Word Quest levels, weekly themes, words and special stickers
     ├── wordquest-merge.js  # Progress merging shared by browser and server
